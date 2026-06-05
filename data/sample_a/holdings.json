@@ -1,0 +1,58 @@
+[
+  {
+    "fund_id": "fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund",
+    "units": 159.07,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 121.4
+  },
+  {
+    "fund_id": "fund_growth",
+    "fund_name": "Kestrel Emerging Growth Fund",
+    "units": 58.6,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 51.31
+  },
+  {
+    "fund_id": "fund_value",
+    "fund_name": "Meridian Value Opportunities Fund",
+    "units": 160.57,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 101.8
+  },
+  {
+    "fund_id": "fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund",
+    "units": 206.71,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 33.22
+  },
+  {
+    "fund_id": "fund_gold",
+    "fund_name": "Apex Gold Savings Fund",
+    "units": 31.13,
+    "purchase_date": "2023-10-01",
+    "purchase_nav": 47.16
+  },
+  {
+    "fund_id": "fund_international",
+    "fund_name": "Polaris Global Technology Fund",
+    "units": 169.03,
+    "purchase_date": "2023-04-01",
+    "purchase_nav": 76.4
+  },
+  {
+    "fund_id": "fund_index",
+    "fund_name": "Sentinel Nifty Index Fund",
+    "units": 196.39,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 168.49
+  },
+  {
+    "fund_id": "fund_tax_saver",
+    "fund_name": "Olive Tax Saver ELSS Fund",
+    "units": 67.58,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 64.43
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "fund_id": "fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund",
+    "units": 62.39,
+    "purchase_date": "2023-09-01",
+    "purchase_nav": 99.78
+  },
+  {
+    "fund_id": "fund_growth",
+    "fund_name": "Kestrel Emerging Growth Fund",
+    "units": 130.73,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 59.73
+  },
+  {
+    "fund_id": "fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund",
+    "units": 43.65,
+    "purchase_date": "2023-09-01",
+    "purchase_nav": 31.45
+  },
+  {
+    "fund_id": "fund_international",
+    "fund_name": "Polaris Global Technology Fund",
+    "units": 164.56,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 80.8
+  },
+  {
+    "fund_id": "fund_index",
+    "fund_name": "Sentinel Nifty Index Fund",
+    "units": 146.5,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 169.7
+  },
+  {
+    "fund_id": "fund_smallcap",
+    "fund_name": "Vortex Small Cap Discovery Fund",
+    "units": 215.51,
+    "purchase_date": "2023-04-01",
+    "purchase_nav": 38.2
+  },
+  {
+    "fund_id": "fund_healthcare",
+    "fund_name": "Helios Healthcare Sector Fund",
+    "units": 192.36,
+    "purchase_date": "2023-10-01",
+    "purchase_nav": 50.69
+  },
+  {
+    "fund_id": "fund_balanced",
+    "fund_name": "Orchid Balanced Advantage Fund",
+    "units": 148.5,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 47.76
+  }
+]

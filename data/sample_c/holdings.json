@@ -1,0 +1,58 @@
+[
+  {
+    "fund_id": "fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund",
+    "units": 107.13,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 110.3
+  },
+  {
+    "fund_id": "fund_value",
+    "fund_name": "Meridian Value Opportunities Fund",
+    "units": 90.36,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 86.49
+  },
+  {
+    "fund_id": "fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund",
+    "units": 56.37,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 34.13
+  },
+  {
+    "fund_id": "fund_gold",
+    "fund_name": "Apex Gold Savings Fund",
+    "units": 87.66,
+    "purchase_date": "2023-11-01",
+    "purchase_nav": 39.59
+  },
+  {
+    "fund_id": "fund_index",
+    "fund_name": "Sentinel Nifty Index Fund",
+    "units": 85.43,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 153.07
+  },
+  {
+    "fund_id": "fund_tax_saver",
+    "fund_name": "Olive Tax Saver ELSS Fund",
+    "units": 128.46,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 65.57
+  },
+  {
+    "fund_id": "fund_silver",
+    "fund_name": "Apex Silver Savings Fund",
+    "units": 112.02,
+    "purchase_date": "2024-01-01",
+    "purchase_nav": 30.69
+  },
+  {
+    "fund_id": "fund_balanced",
+    "fund_name": "Orchid Balanced Advantage Fund",
+    "units": 161.56,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 45.62
+  }
+]

@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tara — Personal AI Finance Assistant</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Markdown renderer -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <!-- CSS Styles -->
+  <style>
+    :root {
+      --bg-color: #030712;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.15);
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --refund: #ec4899;
+      --transfer: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+    }
+
+    /* Header styling */
+    header {
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(3, 7, 18, 0.6);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--success));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .logo-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(to right, #ffffff, #9ca3af);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .controls-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .dataset-label {
+      font-size: 0.87rem;
+      color: var(--text-muted);
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    select {
+      appearance: none;
+      background: rgba(31, 41, 55, 0.8);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.5rem 2.5rem 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+
+    .select-wrapper::after {
+      content: '▼';
+      font-size: 0.65rem;
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--text-muted);
+    }
+
+    /* Main layout */
+    .dashboard-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 73px);
+      overflow: hidden;
+    }
+
+    /* Left panel - Chat assistant */
+    .chat-panel {
+      width: 420px;
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      background: rgba(17, 24, 39, 0.2);
+    }
+
+    .chat-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .chat-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .chat-header p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      scrollbar-width: thin;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 1rem;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: rgba(31, 41, 55, 0.7);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 0.5rem;
+      text-align: right;
+    }
+
+    .message.assistant .message-time {
+      color: var(--text-muted);
+    }
+
+    .message table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.8rem;
+    }
+
+    .message th, .message td {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+    }
+
+    .message th {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .chat-suggestions {
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .suggestion-btn {
+      background: rgba(31, 41, 55, 0.4);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .suggestion-btn:hover {
+      background: var(--primary-glow);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .chat-input-area {
+      padding: 1.25rem;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.75rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .chat-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+    }
+
+    .send-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .send-btn:hover {
+      transform: scale(1.05);
+      background: #4f46e5;
+    }
+
+    .loading-bubble {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0.5rem 1rem !important;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Right panel - Dashboard info */
+    .dashboard-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      padding: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      width: fit-content;
+    }
+
+    .stat-badge.positive {
+      background: var(--success-glow);
+      color: var(--success);
+    }
+
+    .stat-badge.negative {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    /* Navigation Tabs */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .tab-content {
+      flex: 1;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Table styling */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .table-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-header h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(31, 41, 55, 0.4);
+      padding: 0.875rem 1.5rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    td {
+      padding: 0.875rem 1.5rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .badge.category {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    .badge.refund-category {
+      background: rgba(236, 72, 153, 0.15);
+      color: var(--refund);
+    }
+
+    .badge.transfer-category {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--transfer);
+    }
+
+    .badge.positive-gain {
+      background: var(--success-glow);
+      color: var(--success);
+    }
+
+    .badge.negative-gain {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    .amount-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+    }
+
+    .amount-val.negative {
+      color: var(--refund);
+    }
+
+    /* Visual Allocation Grid */
+    .alloc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .alloc-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .alloc-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .alloc-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .alloc-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .alloc-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .alloc-label {
+      font-weight: 600;
+    }
+
+    .alloc-pct {
+      color: var(--text-muted);
+    }
+
+    .alloc-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .alloc-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--primary), var(--success));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Screen Blocker loader */
+    .screen-loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .screen-loader.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(99, 102, 241, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Markdown rendered content inside chat bubbles */
+    .md-body { line-height: 1.65; }
+    .md-body p { margin: 0.4em 0; }
+    .md-body p:first-child { margin-top: 0; }
+    .md-body p:last-child  { margin-bottom: 0; }
+    .md-body ul, .md-body ol { padding-left: 1.4em; margin: 0.4em 0; }
+    .md-body li { margin: 0.2em 0; }
+    .md-body strong { color: #ffffff; }
+    .md-body em { color: var(--text-muted); font-style: italic; }
+    .md-body code {
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.2);
+      color: #a5b4fc;
+      padding: 0.1em 0.45em;
+      border-radius: 5px;
+      font-size: 0.82em;
+      font-family: 'Space Grotesk', monospace;
+    }
+    .md-body pre {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.8em 1em;
+      overflow-x: auto;
+      margin: 0.6em 0;
+    }
+    .md-body pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #e2e8f0;
+    }
+    .md-body blockquote {
+      border-left: 3px solid var(--primary);
+      padding-left: 0.9em;
+      color: var(--text-muted);
+      margin: 0.5em 0;
+    }
+    .md-body h1,.md-body h2,.md-body h3,.md-body h4 {
+      color: #ffffff;
+      margin: 0.7em 0 0.3em;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .md-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.6em 0;
+      font-size: 0.85em;
+    }
+    .md-body th {
+      background: rgba(99,102,241,0.18);
+      color: #a5b4fc;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.5em 0.8em;
+      border-bottom: 1px solid rgba(99,102,241,0.3);
+    }
+    .md-body td {
+      padding: 0.45em 0.8em;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-main);
+    }
+    .md-body tr:last-child td { border-bottom: none; }
+    .md-body tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+    .md-body .message-time { margin-top: 0.5em; }
+  </style>
+
+</head>
+<body>
+
+  <!-- Screen Loader -->
+  <div id="screenLoader" class="screen-loader">
+    <div class="spinner"></div>
+    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 500;" id="loaderText">Ingesting Dataset...</div>
+  </div>
+
+  <!-- App Header -->
+  <header>
+    <div class="logo-section">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">
+        <h1>Tara</h1>
+        <p>AI Finance Co-Pilot</p>
+      </div>
+    </div>
+    <div class="controls-section">
+      <div class="dataset-label">Active Dataset:</div>
+      <div class="select-wrapper">
+        <select id="datasetSelect"></select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dashboard Main Layout -->
+  <div class="dashboard-container">
+    
+    <!-- Left Chat Area -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <h2>Consult Tara</h2>
+        <p>Ask questions about your finances, returns, and allocations.</p>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message assistant">
+          Hello! I am Tara, your financial assistant. I have mapped your bank transactions and mutual fund assets. 
+          What would you like to analyze today?
+          <div class="message-time" id="chatInitTime">Now</div>
+        </div>
+      </div>
+      <div class="chat-suggestions" id="chatSuggestions"></div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." onkeydown="handleChatKey(event)">
+        <button class="send-btn" onclick="sendMessage()">&rarr;</button>
+      </div>
+    </div>
+
+    <!-- Right Dashboard View -->
+    <div class="dashboard-panel">
+      
+      <!-- Key Statistics Summary -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-title">Net Portfolio Value</div>
+          <div class="stat-value" id="statNetValue">₹0.00</div>
+          <div class="stat-badge positive" id="statGains">
+            <span>&uarr;</span> <span id="statGainsVal">₹0.00</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Overall Return</div>
+          <div class="stat-value" id="statReturns">0.00%</div>
+          <div class="stat-badge positive" id="statReturnsBadge">
+            <span>&uarr;</span> <span>Return</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Net Regular Expense</div>
+          <div class="stat-value" id="statExpense">₹0.00</div>
+          <div class="stat-badge negative">
+            <span>&darr;</span> <span>Spending</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Top Expense Category</div>
+          <div class="stat-value" id="statTopCategory">None</div>
+          <div class="stat-badge positive" style="background: rgba(99,102,241,0.1); color: var(--primary);">
+            <span>★</span> <span>Max</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation tabs -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab(event, 'portfolioTab')">Portfolio holdings</button>
+        <button class="tab-btn" onclick="switchTab(event, 'fundsTab')">Mutual funds performance</button>
+        <button class="tab-btn" onclick="switchTab(event, 'txnsTab')">All transactions</button>
+      </div>
+
+      <!-- Portfolio holdings view -->
+      <div id="portfolioTab" class="tab-content active">
+        <div class="alloc-grid">
+          <div class="alloc-card">
+            <h3>Asset Allocation by Category</h3>
+            <div class="alloc-bar-container" id="categoryAllocBars">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+          <div class="alloc-card">
+            <h3>Allocation by Individual Funds</h3>
+            <div class="alloc-bar-container" id="fundAllocBars">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <h3>My Portfolio Holdings</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Fund Name</th>
+                <th>Asset Category</th>
+                <th>Units</th>
+                <th>Avg purchase NAV</th>
+                <th>Total Cost</th>
+                <th>Current NAV</th>
+                <th>Current Value</th>
+                <th>Gain/Loss</th>
+                <th>Return %</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mutual funds performance view -->
+      <div id="fundsTab" class="tab-content">
+        <div class="table-container">
+          <div class="table-header">
+            <h3>Mutual Funds Tracking (Historical Return)</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Fund Name</th>
+                <th>Asset Category</th>
+                <th>Initial NAV</th>
+                <th>Latest NAV</th>
+                <th>Historical NAV Return %</th>
+              </tr>
+            </thead>
+            <tbody id="fundsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Transactions log view -->
+      <div id="txnsTab" class="tab-content">
+        <div class="table-container">
+          <div class="table-header">
+            <h3>Transactions History</h3>
+            <div style="font-size: 0.85rem; color: var(--text-muted);" id="txnCounts">Showing 0 transactions</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Raw Merchant Name</th>
+                <th>Normalized Merchant</th>
+                <th>Category (Inferred)</th>
+                <th>Memo / Description</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="txnsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Set clock times
+    document.getElementById("chatInitTime").innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Switch Tabs
+    function switchTab(event, tabId) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+
+      event.currentTarget.classList.add("active");
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    // Show/Hide Screen Loader
+    function setLoader(show, text = "Loading...") {
+      const loader = document.getElementById("screenLoader");
+      const loaderText = document.getElementById("loaderText");
+      loaderText.innerText = text;
+      if (show) {
+        loader.classList.add("active");
+      } else {
+        loader.classList.remove("active");
+      }
+    }
+
+    // Format Currency Helper (INR)
+    function formatINR(value) {
+      const isNeg = value < 0;
+      const cleanVal = Math.abs(value);
+      const formatted = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 2
+      }).format(cleanVal);
+      return (isNeg ? '-' : '') + formatted;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeHtmlAttr(value) {
+      return escapeHtml(value).replace(/'/g, "&#39;");
+    }
+
+    function formatDatasetLabel(name) {
+      return name.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    async function loadDatasetOptions(activeDataset) {
+      const select = document.getElementById("datasetSelect");
+      select.innerHTML = "";
+
+      try {
+        const res = await fetch("/datasets");
+        const payload = await res.json();
+        const datasets = payload.datasets || [];
+
+        if (datasets.length === 0) {
+          select.innerHTML = `<option value="">No datasets found</option>`;
+          return;
+        }
+
+        for (const dataset of datasets) {
+          const option = document.createElement("option");
+          option.value = dataset;
+          option.textContent = formatDatasetLabel(dataset);
+          select.appendChild(option);
+        }
+
+        const active = activeDataset || payload.active || datasets[0];
+        if (datasets.includes(active)) {
+          select.value = active;
+        }
+      } catch (err) {
+        console.error("Failed to load datasets:", err);
+        select.innerHTML = `<option value="">Unable to load datasets</option>`;
+      }
+    }
+
+    function updateSuggestions(data) {
+      const container = document.getElementById("chatSuggestions");
+      const suggestions = [
+        { label: "Portfolio Worth?", question: "What is my portfolio worth today?" },
+        { label: "Best Fund?", question: "Which fund performed best?" },
+      ];
+
+      const categories = (data.categories || [])
+        .map((item) => item.category)
+        .filter(Boolean);
+
+      if (categories.length >= 2) {
+        suggestions.push({
+          label: `${formatDatasetLabel(categories[0])} vs ${formatDatasetLabel(categories[1])}`,
+          question: `Compare ${categories[0]} vs ${categories[1]} spending.`,
+        });
+      }
+
+      const merchantTotals = {};
+      for (const txn of data.transactions || []) {
+        if (txn.amount > 0 && txn.category && !/transfer/i.test(txn.category)) {
+          merchantTotals[txn.merchant] = (merchantTotals[txn.merchant] || 0) + txn.amount;
+        }
+      }
+
+      const topMerchant = Object.entries(merchantTotals).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (topMerchant) {
+        suggestions.unshift({
+          label: `${topMerchant} Spending?`,
+          question: `How much did I spend on ${topMerchant}?`,
+        });
+      }
+
+      container.innerHTML = suggestions
+        .map(
+          (item) =>
+            `<button type="button" class="suggestion-btn" data-question="${escapeHtmlAttr(item.question)}">${escapeHtml(item.label)}</button>`
+        )
+        .join("");
+    }
+
+    document.getElementById("chatSuggestions").addEventListener("click", (event) => {
+      const button = event.target.closest(".suggestion-btn");
+      if (!button?.dataset.question) return;
+      askPreset(button.dataset.question);
+    });
+
+    // Fetch Dashboard Data
+    async function fetchDashboard() {
+      try {
+        const res = await fetch("/dashboard-data");
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // 1. Sync dataset dropdown
+        await loadDatasetOptions(data.dataset);
+        document.getElementById("datasetSelect").value = data.dataset;
+
+        // 2. Map Key Summary Cards
+        const netValue = data.overview?.total_current_value || 0;
+        const totalCost = data.overview?.total_investment || 0;
+        const totalGains = data.overview?.total_gains || 0;
+        const returnPct = data.overview?.overall_return_pct || 0;
+
+        document.getElementById("statNetValue").innerText = formatINR(netValue);
+        document.getElementById("statGainsVal").innerText = formatINR(totalGains);
+        document.getElementById("statReturns").innerText = returnPct.toFixed(2) + "%";
+
+        const gainsBadge = document.getElementById("statGains");
+        const returnsBadge = document.getElementById("statReturnsBadge");
+
+        if (totalGains >= 0) {
+          gainsBadge.className = "stat-badge positive";
+          gainsBadge.querySelector("span").innerHTML = "&uarr;";
+          returnsBadge.className = "stat-badge positive";
+          returnsBadge.querySelector("span").innerHTML = "&uarr;";
+        } else {
+          gainsBadge.className = "stat-badge negative";
+          gainsBadge.querySelector("span").innerHTML = "&darr;";
+          returnsBadge.className = "stat-badge negative";
+          returnsBadge.querySelector("span").innerHTML = "&darr;";
+        }
+
+        // Spending calculation
+        const totalSpending = data.categories?.reduce((sum, item) => sum + item.total_spending, 0) || 0;
+        document.getElementById("statExpense").innerText = formatINR(totalSpending);
+
+        const topCategory = data.categories?.[0]?.category || "None";
+        document.getElementById("statTopCategory").innerText = topCategory;
+
+        // 3. Populate Allocation Bars
+        populateAllocation(data.allocation);
+
+        // 4. Populate Holdings Table
+        populateHoldings(data.holdings);
+
+        // 5. Populate Funds Table
+        populateFunds(data.performance);
+
+        // 6. Populate Transactions Table
+        populateTransactions(data.transactions);
+
+        // 7. Refresh dataset-driven chat suggestions
+        updateSuggestions(data);
+
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+      }
+    }
+
+    // Populate Allocation bars
+    function populateAllocation(alloc) {
+      const catContainer = document.getElementById("categoryAllocBars");
+      const fundContainer = document.getElementById("fundAllocBars");
+      catContainer.innerHTML = "";
+      fundContainer.innerHTML = "";
+
+      if (!alloc) return;
+
+      // Populate Category
+      (alloc.allocation_by_category || []).slice(0, 5).forEach(item => {
+        const html = `
+          <div class="alloc-item">
+            <div class="alloc-meta">
+              <span class="alloc-label" style="text-transform: capitalize;">${escapeHtml((item.category || "").replace("_", " "))}</span>
+              <span class="alloc-pct">${item.allocation_pct}% (${formatINR(item.current_value)})</span>
+            </div>
+            <div class="alloc-track">
+              <div class="alloc-fill" style="width: ${item.allocation_pct}%"></div>
+            </div>
+          </div>
+        `;
+        catContainer.insertAdjacentHTML("beforeend", html);
+      });
+
+      // Populate Fund
+      (alloc.allocation_by_fund || []).slice(0, 5).forEach(item => {
+        const html = `
+          <div class="alloc-item">
+            <div class="alloc-meta">
+              <span class="alloc-label">${escapeHtml(item.fund_name || "")}</span>
+              <span class="alloc-pct">${item.allocation_pct}% (${formatINR(item.current_value)})</span>
+            </div>
+            <div class="alloc-track">
+              <div class="alloc-fill" style="width: ${item.allocation_pct}%"></div>
+            </div>
+          </div>
+        `;
+        fundContainer.insertAdjacentHTML("beforeend", html);
+      });
+
+      // Trigger animations
+      setTimeout(() => {
+        document.querySelectorAll(".alloc-fill").forEach(fill => {
+          const w = fill.style.width;
+        });
+      }, 100);
+    }
+
+    // Populate Holdings table
+    function populateHoldings(holdings) {
+      const tbody = document.getElementById("holdingsTableBody");
+      tbody.innerHTML = "";
+      const rows = holdings || [];
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No holdings data available</td></tr>`;
+        return;
+      }
+
+      rows.forEach(h => {
+        const isPositive = h.gains >= 0;
+        const totalCost = h.units * h.purchase_nav;
+        const html = `
+          <tr>
+            <td><strong style="color:#ffffff;">${escapeHtml(h.fund_name || "")}</strong></td>
+            <td><span class="badge category">${escapeHtml((h.category || "").replace("_", " "))}</span></td>
+            <td>${h.units.toFixed(2)}</td>
+            <td>₹${h.purchase_nav.toFixed(2)}</td>
+            <td class="amount-val">₹${totalCost.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>₹${h.current_nav.toFixed(2)}</td>
+            <td class="amount-val">₹${h.current_value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>
+              <span class="badge ${isPositive ? 'positive-gain' : 'negative-gain'}">
+                ${isPositive ? '+' : ''}${formatINR(h.gains)}
+              </span>
+            </td>
+            <td class="amount-val ${isPositive ? 'positive-gain' : 'negative-gain'}" style="color: ${isPositive ? 'var(--success)' : 'var(--error)'};">
+              ${isPositive ? '+' : ''}${h.return_pct.toFixed(2)}%
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", html);
+      });
+    }
+
+    // Populate Funds performance table
+    function populateFunds(funds) {
+      const tbody = document.getElementById("fundsTableBody");
+      tbody.innerHTML = "";
+      const rows = funds || [];
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No funds tracked</td></tr>`;
+        return;
+      }
+
+      rows.forEach(f => {
+        const isPositive = f.return_pct >= 0;
+        const html = `
+          <tr>
+            <td><strong style="color:#ffffff;">${escapeHtml(f.fund_name || "")}</strong></td>
+            <td><span class="badge category">${escapeHtml((f.category || "").replace("_", " "))}</span></td>
+            <td>₹${f.start_nav.toFixed(2)}</td>
+            <td>₹${f.end_nav.toFixed(2)}</td>
+            <td class="amount-val ${isPositive ? 'positive-gain' : 'negative-gain'}" style="color: ${isPositive ? 'var(--success)' : 'var(--error)'}; font-weight:700;">
+              ${isPositive ? '+' : ''}${f.return_pct.toFixed(2)}%
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", html);
+      });
+    }
+
+    // Populate Transactions table
+    function populateTransactions(txns) {
+      const tbody = document.getElementById("txnsTableBody");
+      const countsEl = document.getElementById("txnCounts");
+      tbody.innerHTML = "";
+      const rows = txns || [];
+
+      countsEl.innerText = `Showing last ${rows.length} transactions`;
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No transactions found</td></tr>`;
+        return;
+      }
+
+      rows.forEach(t => {
+        const dateStr = new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        const isRefund = t.amount < 0;
+        const isTransfer = /transfer/i.test(t.category || "");
+        
+        let categoryClass = "badge category";
+        if (isRefund) categoryClass = "badge refund-category";
+        else if (isTransfer) categoryClass = "badge transfer-category";
+
+        const html = `
+          <tr>
+            <td style="white-space: nowrap; color: var(--text-muted);">${dateStr}</td>
+            <td style="color:#ffffff; font-weight:500;">${escapeHtml(t.raw_merchant || "")}</td>
+            <td>${escapeHtml(t.merchant || "")}</td>
+            <td><span class="${categoryClass}">${escapeHtml(t.category || "")}</span></td>
+            <td style="font-size:0.8rem; color: var(--text-muted);">${escapeHtml(t.memo || "")}</td>
+            <td class="amount-val ${isRefund ? 'negative' : ''}" style="text-align: right; color: ${isRefund ? 'var(--refund)' : (isTransfer ? 'var(--transfer)' : 'inherit')};">
+              ${isRefund ? '' : ''}${formatINR(t.amount)}
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", html);
+      });
+    }
+
+    // Preset prompts clicking
+    function askPreset(promptText) {
+      document.getElementById("chatInput").value = promptText;
+      sendMessage();
+    }
+
+    // Chat handling
+    function handleChatKey(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    }
+
+    // Configure marked.js for safe HTML rendering
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: true });
+    }
+
+    function renderMarkdown(text) {
+      if (typeof marked !== 'undefined') {
+        return marked.parse(text);
+      }
+      // Fallback: basic formatting
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    }
+
+    async function sendMessage() {
+      const inputEl = document.getElementById("chatInput");
+      const question = inputEl.value.trim();
+      if (!question) return;
+
+      // Reset input
+      inputEl.value = "";
+
+      // Append User message
+      const chatContainer = document.getElementById("chatMessages");
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const userHtml = `
+        <div class="message user">
+          ${question.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+          <div class="message-time">${timeStr}</div>
+        </div>
+      `;
+      chatContainer.insertAdjacentHTML("beforeend", userHtml);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // Append Loading bubble
+      const loaderId = "loader_" + Date.now();
+      const loaderHtml = `
+        <div class="message assistant loading-bubble" id="${loaderId}">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      `;
+      chatContainer.insertAdjacentHTML("beforeend", loaderHtml);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+
+        // Remove loader bubble
+        document.getElementById(loaderId)?.remove();
+
+        if (res.status === 429 || data.retryable) {
+          // Rate-limit: restore question and show friendly message
+          inputEl.value = question;
+          chatContainer.insertAdjacentHTML("beforeend", `
+            <div class="message assistant" style="border-left:3px solid var(--warning);">
+              <strong>⏳ Tara is a little busy right now</strong><br>
+              The AI model hit a temporary rate limit. Your question has been restored — please wait a few seconds and send it again.
+              <div class="message-time">${timeStr}</div>
+            </div>
+          `);
+        } else if (data.error) {
+          chatContainer.insertAdjacentHTML("beforeend", `
+            <div class="message assistant" style="border-left:3px solid var(--error);">
+              <strong>⚠️ Something went wrong</strong><br>
+              ${data.error.replace(/</g,'&lt;')}
+              <div class="message-time">${timeStr}</div>
+            </div>
+          `);
+        } else {
+          // Successful response — render full markdown
+          const renderedAnswer = renderMarkdown(data.answer || 'No response received.');
+          const assistantHtml = `
+            <div class="message assistant md-body">
+              ${renderedAnswer}
+              <div class="message-time">${timeStr}</div>
+            </div>
+          `;
+          chatContainer.insertAdjacentHTML("beforeend", assistantHtml);
+        }
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      } catch (err) {
+        console.error("Chat error:", err);
+        document.getElementById(loaderId)?.remove();
+        chatContainer.insertAdjacentHTML("beforeend", `
+          <div class="message assistant" style="border-left:3px solid var(--error);">
+            <strong>⚠️ Connection error</strong><br>
+            Could not reach Tara. Please check your connection and try again.
+            <div class="message-time">${timeStr}</div>
+          </div>
+        `);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
+
+    // Dataset Switcher Dropdown Change
+    document.getElementById("datasetSelect").addEventListener("change", async (e) => {
+      const selectedDataset = e.target.value;
+      if (!selectedDataset) return;
+      setLoader(true, `Ingesting and analyzing ${formatDatasetLabel(selectedDataset)}...`);
+
+      try {
+        const res = await fetch("/load-dataset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataset: selectedDataset })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          // Clear chat context with system reminder
+          const chatContainer = document.getElementById("chatMessages");
+          chatContainer.innerHTML = `
+            <div class="message assistant">
+              Successfully switched to <strong>${formatDatasetLabel(selectedDataset)}</strong>. I have re-analyzed the database. How can I help you with this dataset?
+              <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+          `;
+          
+          // Refresh dashboard stats
+          await fetchDashboard();
+        } else {
+          alert("Failed to load dataset: " + result.message);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Network error occurred switching datasets");
+      } finally {
+        setLoader(false);
+      }
+    });
+
+    // Page initialization
+    (async () => {
+      setLoader(true, "Initializing Financial Dashboard...");
+      await loadDatasetOptions();
+      await fetchDashboard();
+      setLoader(false);
+    })();
+  </script>
+</body>
+</html>
