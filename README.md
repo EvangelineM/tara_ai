@@ -20,7 +20,9 @@ Full-stack personal finance dashboard with an AI assistant. Tara aggregates port
 	<tr>
 		<td align="center"><strong>Transactions</strong><br><img src="assets/transactions.png" width="420" alt="Transactions"></td>
 		<td align="center"><strong>Investments</strong><br><img src="assets/investments.png" width="420" alt="Investments"></td>
-        <td align="center"><strong>Insights</strong><br><img src="assets/insights.png" width="420" alt="Insights"></td>
+	</tr>
+	<tr>
+		<td align="center"><strong>Insights</strong><br><img src="assets/insights.png" width="420" alt="Insights"></td>
 	</tr>
 </table>
 
