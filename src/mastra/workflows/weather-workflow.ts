@@ -71,7 +71,7 @@ const fetchWeather = createStep({
     }
 
     const forecast = {
-      date: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0],
       maxTemp: Math.max(...data.hourly.temperature_2m),
       minTemp: Math.min(...data.hourly.temperature_2m),
       condition: getWeatherCondition(data.current.weathercode),

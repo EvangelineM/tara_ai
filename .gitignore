@@ -13,3 +13,14 @@ dist
 
 # Local Mastra runtime storage (created by dev server)
 src/mastra/public/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+package-lock.json

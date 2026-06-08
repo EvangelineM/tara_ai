@@ -15,6 +15,10 @@ import fs from "fs";
 import path from "path";
 import { noopObserve } from "@mastra/core/tools";
 import { getProjectRoot, resolveDataDir, listAvailableDatasets, isValidDataset } from "../lib/paths";
+import { pool } from "../db/connection";
+import { answerQuestion } from "../lib/ask-service";
+import { classifyQuestion } from "../lib/question-classifier";
+import { buildInsights } from "../lib/insights-builder";
 
 const PROJECT_ROOT = getProjectRoot();
 
@@ -96,15 +100,48 @@ export const mastra = new Mastra({
         },
       }),
 
-      // 3. Fetch combined metrics for dashboard
+      // 3. Search transactions (all matches when filtering; recent-only when no filters)
+      registerApiRoute("/transactions", {
+        method: "GET",
+        requiresAuth: false,
+        handler: async (c) => {
+          try {
+            const toolCtx = { observe: noopObserve } as any;
+            const search = c.req.query("search")?.trim() || undefined;
+            const category = c.req.query("category")?.trim() || undefined;
+            const dateFrom = c.req.query("dateFrom")?.trim() || undefined;
+            const dateTo = c.req.query("dateTo")?.trim() || undefined;
+            const hasFilters = !!(search || category || dateFrom || dateTo);
+
+            const result = (await transactionTool.execute!(
+              {
+                action: "list_transactions",
+                filterSearch: search,
+                filterCategory: category,
+                dateFrom,
+                dateTo,
+                limit: hasFilters ? 0 : 10,
+              },
+              toolCtx
+            )) as { transactions?: unknown[] };
+
+            return c.json({
+              transactions: result?.transactions || [],
+              filtered: hasFilters,
+            });
+          } catch (err) {
+            console.error("Transactions API error:", err);
+            return c.json({ error: (err as Error).message }, 500);
+          }
+        },
+      }),
+
+      // 4. Fetch combined metrics for dashboard
       registerApiRoute("/dashboard-data", {
         method: "GET",
         requiresAuth: false,
         handler: async (c) => {
           try {
-            const datasetDir = resolveDataDir();
-            const datasetName = path.basename(datasetDir);
-
             // Execute portfolio metrics
             const toolCtx = { observe: noopObserve } as any;
 
@@ -128,7 +165,7 @@ export const mastra = new Mastra({
             // Execute transactions metrics
             const txnsRes = (await transactionTool.execute!({
               action: "list_transactions",
-              limit: 100,
+              limit: 10,
             }, toolCtx)) as any;
 
             const categoriesRes = (await transactionTool.execute!({
@@ -139,15 +176,55 @@ export const mastra = new Mastra({
               action: "monthly_comparison",
             }, toolCtx)) as any;
 
+            const merchantsRes = (await transactionTool.execute!({
+              action: "top_merchants",
+              limit: 8,
+            }, toolCtx)) as any;
+
+            const bestFundRes = (await fundTool.execute!({
+              action: "best_performing_fund",
+            }, toolCtx)) as any;
+
+            const growthClient = await pool.connect();
+            let portfolioGrowth: { date: string; value: number }[] = [];
+            try {
+              const growthRes = await growthClient.query(`
+                SELECT fn.nav_date::text as date, SUM(h.units * fn.nav)::numeric as value
+                FROM holdings h
+                JOIN fund_nav fn ON h.fund_id = fn.fund_id
+                GROUP BY fn.nav_date
+                ORDER BY fn.nav_date ASC
+              `);
+              portfolioGrowth = growthRes.rows.map((row) => ({
+                date: row.date,
+                value: parseFloat(row.value),
+              }));
+            } finally {
+              growthClient.release();
+            }
+
+            const categories = categoriesRes?.categories || [];
+            const monthly = monthlyRes?.monthly_spending || [];
+            const overview = overviewRes?.overview || null;
+            const bestFund = bestFundRes?.best_performing_fund || null;
+
+            const insights = await buildInsights(
+              { overview, categories, monthly, best_fund: bestFund },
+              pool
+            );
+
             return c.json({
-              dataset: datasetName,
-              overview: overviewRes?.overview || null,
+              overview,
               holdings: holdingsRes?.holdings || [],
               allocation: allocationRes || null,
               performance: performanceRes?.performance || [],
               transactions: txnsRes?.transactions || [],
-              categories: categoriesRes?.categories || [],
-              monthly: monthlyRes?.monthly_spending || [],
+              categories,
+              monthly,
+              top_merchants: merchantsRes?.merchants || [],
+              best_fund: bestFund,
+              portfolio_growth: portfolioGrowth,
+              insights,
             });
           } catch (err) {
             console.error("Dashboard data API error:", err);
@@ -156,7 +233,7 @@ export const mastra = new Mastra({
         },
       }),
 
-      // 3. Ask assistant endpoint (with retry-backoff for rate limits)
+      // 3. Ask assistant endpoint (deterministic tool-backed answers + agent fallback)
       registerApiRoute("/ask", {
         method: "POST",
         requiresAuth: false,
@@ -165,6 +242,28 @@ export const mastra = new Mastra({
             const { question } = (await c.req.json()) as { question: string };
             if (!question) {
               return c.json({ error: "Missing question parameter" }, 400);
+            }
+
+            const intent = classifyQuestion(question);
+
+            if (intent !== "general") {
+              try {
+                const structured = await answerQuestion(question);
+                return c.json({ structured: true, ...structured });
+              } catch (err) {
+                const msg = (err as Error).message;
+                if (msg.startsWith("INCONSISTENT_RESPONSE")) {
+                  console.error("[Ask] Rejected inconsistent response:", msg);
+                  return c.json(
+                    {
+                      error:
+                        "An internal consistency check failed. Please try again.",
+                    },
+                    500
+                  );
+                }
+                throw err;
+              }
             }
 
             const mastraInstance = c.get("mastra");
@@ -177,7 +276,14 @@ export const mastra = new Mastra({
             for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
               try {
                 const response = await agent.generate(question);
-                return c.json({ answer: response.text });
+                return c.json({
+                  structured: true,
+                  question,
+                  answer: response.text,
+                  details: "",
+                  source: "agent",
+                  metadata: { intent: "general" },
+                });
               } catch (err: any) {
                 lastError = err;
                 const msg: string = err?.message ?? "";
@@ -253,6 +359,9 @@ export const mastra = new Mastra({
 
             const { ingestData } = await import("../../scripts/ingest");
             await ingestData(targetDir);
+
+            const { clearSemanticMatchCache } = await import("../lib/semantic-matcher");
+            clearSemanticMatchCache(); // also clears spending index + embedding caches
 
             return c.json({
               success: true,
