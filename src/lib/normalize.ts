@@ -1,3 +1,8 @@
+import {
+  discoverMerchantGroups,
+  type MerchantRecord,
+} from "./merchant-resolver";
+
 /** Generic merchant-name noise patterns (payment rails, not merchant-specific). */
 const MERCHANT_NOISE_PATTERNS: RegExp[] = [
   /\*ORDER\b/gi,
@@ -160,7 +165,7 @@ function resolveCategory(
   return "uncategorized";
 }
 
-/** Cluster aliases by signature and assign categories from dataset vocabulary. */
+/** Cluster aliases by signature and semantic similarity; assign categories from dataset vocabulary. */
 export function normalizeMerchantsFallback(
   merchants: MerchantInput[],
   categoryVocabulary: string[]
@@ -170,25 +175,26 @@ export function normalizeMerchantsFallback(
       ? categoryVocabulary
       : ["uncategorized"];
 
-  const clusters = new Map<string, string[]>();
-  for (const item of merchants) {
-    const signature = merchantSignature(item.raw_merchant) || item.raw_merchant.toLowerCase();
-    const group = clusters.get(signature) ?? [];
-    group.push(item.raw_merchant);
-    clusters.set(signature, group);
-  }
+  const records: MerchantRecord[] = merchants.map((item) => ({
+    rawMerchant: item.raw_merchant,
+    normalizedMerchant: cleanMerchantName(item.raw_merchant),
+    category: resolveCategory(item, vocabulary),
+    sampleMemos: item.memos,
+  }));
 
-  const canonicalByRaw = new Map<string, string>();
-  for (const variants of clusters.values()) {
-    const canonical = pickCanonicalName(variants);
-    for (const raw of variants) {
-      canonicalByRaw.set(raw, canonical);
+  const groups = discoverMerchantGroups(records);
+  const rawToCanonical = new Map<string, string>();
+
+  for (const group of groups) {
+    for (const raw of group.rawMerchants) {
+      rawToCanonical.set(raw, group.canonicalName);
     }
   }
 
   return merchants.map((item) => ({
     raw_merchant: item.raw_merchant,
-    normalized_merchant: canonicalByRaw.get(item.raw_merchant) ?? cleanMerchantName(item.raw_merchant),
+    normalized_merchant:
+      rawToCanonical.get(item.raw_merchant) ?? cleanMerchantName(item.raw_merchant),
     category: resolveCategory(item, vocabulary),
   }));
 }

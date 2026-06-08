@@ -2,6 +2,11 @@ import type { Pool, PoolClient } from "pg";
 import { formatCategoryLabel } from "./format";
 import { listMerchantVocabulary, matchSpendingTopic } from "./semantic-matcher";
 import { topicSearchPatterns } from "./spending-index";
+import {
+  loadMerchantRegistry,
+  resolveMerchantSpending,
+} from "./merchant-service";
+import { cleanMerchantKey, matchMerchantTerm } from "./merchant-resolver";
 
 type Queryable = Pool | PoolClient;
 
@@ -123,7 +128,7 @@ export async function getSpendingByMerchants(
   }
 
   const conditions = merchantPatterns
-    .map((_, i) => `(m.normalized_merchant ~* $${i + 1} OR t.merchant ~* $${i + 1})`)
+    .map((_, i) => `m.normalized_merchant ~* $${i + 1}`)
     .join(" OR ");
 
   const patterns = merchantPatterns.map((p) => p.source.replace(/^\^|\$$/g, ""));
@@ -235,7 +240,7 @@ export async function getSpendingForSemanticMatch(
   }
 
   const clauses: string[] = [];
-  const params: string[] = [];
+  const params: (string | string[])[] = [];
   let paramIndex = 1;
 
   if (categories.length > 0) {
@@ -245,7 +250,17 @@ export async function getSpendingForSemanticMatch(
   }
 
   for (const term of merchantTerms) {
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const registry = await loadMerchantRegistry(db!);
+    const match = matchMerchantTerm(term, registry);
+
+    if (match) {
+      clauses.push(`t.merchant = ANY($${paramIndex}::text[])`);
+      params.push(match.group.rawMerchants);
+      paramIndex++;
+      continue;
+    }
+
+    const escaped = cleanMerchantKey(term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     clauses.push(
       `(m.normalized_merchant ~* $${paramIndex} OR t.merchant ~* $${paramIndex})`
     );
@@ -362,6 +377,24 @@ export async function resolveSemanticSpending(
   }
 
   const term = normalizeTerm(userTerm);
+
+  const merchantSpend = await resolveMerchantSpending(term, db);
+  if (merchantSpend) {
+    return {
+      userTerm: term,
+      displayLabel: merchantSpend.canonicalName,
+      matchedCategories: [],
+      matchedMerchants: merchantSpend.matchedAliases,
+      totalSpend: merchantSpend.totalSpend,
+      transactionCount: merchantSpend.transactionCount,
+      resolutionMethod: "merchant",
+      mappingNote:
+        merchantSpend.matchedAliases.length > 1
+          ? `Aggregated spending across aliases: ${merchantSpend.matchedAliases.join(", ")}.`
+          : null,
+    };
+  }
+
   const allCategories = await listCategorySpending(db);
   const categoryLabels = allCategories.map((row) => row.category);
 
@@ -386,6 +419,27 @@ export async function resolveSemanticSpending(
   const semantic = await matchSpendingTopic(term, categoryLabels, merchants, db);
 
   if (!semantic) {
+    const registry = await loadMerchantRegistry(db);
+    const fuzzy = matchMerchantTerm(term, registry);
+    if (fuzzy) {
+      const merchantSpend = await resolveMerchantSpending(term, db);
+      if (merchantSpend) {
+        return {
+          userTerm: term,
+          displayLabel: merchantSpend.canonicalName,
+          matchedCategories: [],
+          matchedMerchants: merchantSpend.matchedAliases,
+          totalSpend: merchantSpend.totalSpend,
+          transactionCount: merchantSpend.transactionCount,
+          resolutionMethod: "merchant",
+          mappingNote:
+            merchantSpend.matchedAliases.length > 1
+              ? `Aggregated spending across aliases: ${merchantSpend.matchedAliases.join(", ")}.`
+              : null,
+        };
+      }
+    }
+
     const literalMerchant = await getSpendingByMerchants(
       [new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")],
       db

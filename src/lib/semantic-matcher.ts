@@ -8,6 +8,7 @@ import {
   clearSpendingIndexCache,
   matchByTransactionText,
 } from "./spending-index";
+import { clearMerchantRegistryCache } from "./merchant-service";
 
 type Queryable = Pool | PoolClient;
 
@@ -233,4 +234,5 @@ export function clearSemanticMatchCache(): void {
   matchCache.clear();
   clearSpendingIndexCache();
   clearEmbeddingCache();
+  clearMerchantRegistryCache();
 }

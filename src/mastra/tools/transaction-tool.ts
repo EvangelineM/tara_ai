@@ -2,6 +2,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { pool } from "../../db/connection";
 import { getLargestTransaction, getLargestCategorySpend } from "../../lib/finance-queries";
+import { resolveMerchantFilter } from "../../lib/merchant-service";
 
 export const transactionTool = createTool({
   id: "transaction-tool",
@@ -104,9 +105,16 @@ export const transactionTool = createTool({
         let paramIndex = 1;
 
         if (filterMerchant) {
-          query += ` AND m.normalized_merchant ILIKE $${paramIndex}`;
-          params.push(`%${filterMerchant}%`);
-          paramIndex++;
+          const rawMerchants = await resolveMerchantFilter(filterMerchant, client);
+          if (rawMerchants?.length) {
+            query += ` AND t.merchant = ANY($${paramIndex}::text[])`;
+            params.push(rawMerchants);
+            paramIndex++;
+          } else {
+            query += ` AND m.normalized_merchant ILIKE $${paramIndex}`;
+            params.push(`%${filterMerchant}%`);
+            paramIndex++;
+          }
         }
 
         query += `
@@ -115,11 +123,18 @@ export const transactionTool = createTool({
         `;
 
         const res = await client.query(query, params);
+        const rows = res.rows;
+        const total = rows.reduce(
+          (sum, row) => sum + parseFloat(row.total_spending),
+          0
+        );
+
         return {
-          merchants: res.rows.map((row) => ({
+          merchants: rows.map((row) => ({
             merchant: row.normalized_merchant,
             total_spending: parseFloat(row.total_spending),
           })),
+          total_spending: total,
         };
       }
 
@@ -168,8 +183,8 @@ export const transactionTool = createTool({
           SELECT m.normalized_merchant as merchant, COALESCE(SUM(t.amount), 0)::numeric as total_spending
           FROM transactions t
           JOIN merchant_mappings m ON t.merchant = m.raw_merchant
-          WHERE t.category !~* 'transfer'
-            AND m.category !~* 'transfer'
+          WHERE t.category !~* 'transfer|rent'
+            AND m.category !~* 'transfer|rent'
           GROUP BY m.normalized_merchant
           ORDER BY total_spending DESC
           LIMIT $1
@@ -201,19 +216,35 @@ export const transactionTool = createTool({
         }
 
         if (filterMerchant) {
-          query += ` AND m.normalized_merchant ILIKE $${paramIndex}`;
-          params.push(`%${filterMerchant}%`);
-          paramIndex++;
+          const rawMerchants = await resolveMerchantFilter(filterMerchant, client);
+          if (rawMerchants?.length) {
+            query += ` AND t.merchant = ANY($${paramIndex}::text[])`;
+            params.push(rawMerchants);
+            paramIndex++;
+          } else {
+            query += ` AND m.normalized_merchant ILIKE $${paramIndex}`;
+            params.push(`%${filterMerchant}%`);
+            paramIndex++;
+          }
         }
 
         if (filterSearch) {
-          query += ` AND (
-            m.normalized_merchant ILIKE $${paramIndex}
-            OR t.merchant ILIKE $${paramIndex}
-            OR COALESCE(t.memo, '') ILIKE $${paramIndex}
-          )`;
-          params.push(`%${filterSearch}%`);
-          paramIndex++;
+          const rawMerchants = await resolveMerchantFilter(filterSearch, client);
+          if (rawMerchants?.length) {
+            query += ` AND t.merchant = ANY($${paramIndex}::text[])`;
+            params.push(rawMerchants);
+            paramIndex++;
+          } else {
+            query += ` AND (
+              m.normalized_merchant ILIKE $${paramIndex}
+              OR t.merchant ILIKE $${paramIndex}
+              OR t.category ILIKE $${paramIndex}
+              OR m.category ILIKE $${paramIndex}
+              OR COALESCE(t.memo, '') ILIKE $${paramIndex}
+            )`;
+            params.push(`%${filterSearch}%`);
+            paramIndex++;
+          }
         }
 
         if (dateFrom) {

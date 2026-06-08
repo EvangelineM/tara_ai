@@ -1279,15 +1279,15 @@
         Object.values(state.charts).forEach((c) => c?.resize());
       }
 
-      async function loadDashboard() {
+      async function loadDashboard(skipTxns = false) {
         const res = await fetch("/dashboard-data");
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         state.data = data;
-        renderAll();
+        renderAll(skipTxns);
       }
 
-      function renderAll() {
+      function renderAll(skipTxns = false) {
         const d = state.data;
         if (!d) return;
 
@@ -1297,7 +1297,9 @@
         renderHoldings(d.holdings || []);
         renderInsights(d);
         populateCategoryFilter(d.categories || []);
-        renderTransactions();
+        if (!skipTxns) {
+          renderTransactions();
+        }
       }
 
       function renderMetrics(d) {
@@ -1604,6 +1606,9 @@
           if (fetchId !== state.txnFetchId) return;
           if (data.error) throw new Error(data.error);
           state.txnResults = data.transactions || [];
+          if (data.datasetSwitched) {
+            await loadDashboard(true);
+          }
         } catch (err) {
           if (fetchId !== state.txnFetchId) return;
           state.txnResults = [];
@@ -1736,6 +1741,10 @@
               renderAnswerBlock("Question", escapeHtml(question)) +
               renderAnswerBlock("Answer", escapeHtml(data.error));
             return;
+          }
+
+          if (data.datasetSwitched) {
+            await loadDashboard();
           }
 
           const answer = data.answer || "No response received.";

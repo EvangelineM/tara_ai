@@ -18,12 +18,13 @@ export async function buildInsights(data: {
   categories?: { category: string; total_spending: number }[];
   monthly?: { month: string; total_spending: number }[];
   best_fund?: { fund_name: string; return_pct: number } | null;
+  holdings?: { fund_name: string; return_pct: number; gains: number }[];
 }, db?: Queryable): Promise<string[]> {
   const insights: string[] = [];
   const monthly = data.monthly || [];
   const categories = data.categories || [];
   const overview = data.overview || {};
-  const bestFund = data.best_fund;
+  const holdings = data.holdings || [];
 
   if (db) {
     const foodMonths = await getCategoryMonthlySpending(/food/i, db);
@@ -62,10 +63,10 @@ export async function buildInsights(data: {
 
   if (db) {
     const food = await resolveSemanticSpending("food", db);
-    const travel = await getTravelSpending(db);
-    if (food && travel.totalSpend > 0) {
+    const transport = await getTravelSpending(db);
+    if (food && transport.totalSpend > 0) {
       insights.push(
-        `Food spending totalled ${formatINR(food.totalSpend)} while travel accounted for ${formatINR(travel.totalSpend)}.`
+        `Food spending totalled ${formatINR(food.totalSpend)} while transport accounted for ${formatINR(transport.totalSpend)}.`
       );
     }
   }
@@ -77,9 +78,17 @@ export async function buildInsights(data: {
     );
   }
 
-  if (bestFund) {
+  // Use holding returns (personal ROI) for best-performing investment, not fund NAV return
+  if (holdings.length > 0) {
+    const bestHolding = [...holdings].sort((a, b) => b.return_pct - a.return_pct)[0];
+    if (bestHolding) {
+      insights.push(
+        `${bestHolding.fund_name} is your best-performing holding at +${bestHolding.return_pct.toFixed(1)}% return.`
+      );
+    }
+  } else if (data.best_fund) {
     insights.push(
-      `${bestFund.fund_name} is your best-performing investment at +${bestFund.return_pct.toFixed(1)}% return.`
+      `${data.best_fund.fund_name} is the best-performing fund (NAV growth) at +${data.best_fund.return_pct.toFixed(1)}%.`
     );
   }
 

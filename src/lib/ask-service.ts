@@ -71,7 +71,9 @@ async function handleCategorySpending(
   const merchantOnly =
     resolved.matchedMerchants.length > 0 && resolved.matchedCategories.length === 0;
 
-  if (merchantOnly) {
+  if (merchantOnly && resolved.matchedMerchants.length > 1) {
+    answer = `You spent ${formatINR(amount)} on ${resolved.displayLabel} across ${resolved.transactionCount} transactions.`;
+  } else if (merchantOnly) {
     answer = `You spent ${formatINR(amount)} on ${resolved.displayLabel}.`;
   } else if (resolved.mappingNote && !exactCategoryMatch) {
     answer = `I found ${resolved.displayLabel}-related spending under the ${categoryLabel} categor${resolved.matchedCategories.length > 1 ? "ies" : "y"}. You spent ${formatINR(amount)}.`;
@@ -79,9 +81,12 @@ async function handleCategorySpending(
     answer = `You spent ${formatINR(amount)} on ${resolved.displayLabel}.`;
   }
 
-  const details = resolved.mappingNote
-    ? `${resolved.mappingNote} Based on ${resolved.transactionCount} related transactions.`
-    : `Based on ${resolved.transactionCount} ${resolved.displayLabel} transactions in your account.`;
+  const details =
+    resolved.matchedMerchants.length > 1
+      ? `Matched merchants: ${resolved.matchedMerchants.join(", ")}. Based on ${resolved.transactionCount} related transactions.`
+      : resolved.mappingNote
+        ? `${resolved.mappingNote} Based on ${resolved.transactionCount} related transactions.`
+        : `Based on ${resolved.transactionCount} ${resolved.displayLabel} transactions in your account.`;
 
   return {
     question,

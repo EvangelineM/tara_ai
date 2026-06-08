@@ -10,6 +10,7 @@ import {
   type MerchantInput,
   type MerchantMapping,
 } from "../src/lib/normalize";
+import { unifyMerchantMappings } from "../src/lib/merchant-resolver";
 import { Agent } from "@mastra/core/agent";
 import { z } from "zod";
 
@@ -34,7 +35,7 @@ async function normalizeWithLLM(
   const normalizerAgent = new Agent({
     id: "normalizer-agent",
     name: "Normalizer Agent",
-    model: "google/gemini-3.5-flash",
+    model: "google/gemini-2.5-flash-lite",
     instructions:
       "You normalize merchant names and assign spending categories using only labels supplied in the prompt.",
   });
@@ -184,6 +185,15 @@ export async function ingestData(dir?: string) {
       mappings = normalizeMerchantsFallback(uniqueMerchantsList, categoryVocabulary);
       console.log(`Completed heuristic normalization for ${mappings.length} merchants.`);
     }
+
+    const memoSamples = new Map<string, string[]>(
+      Array.from(merchantMap.entries()).map(([raw, details]) => [
+        raw,
+        Array.from(details.memos).slice(0, 5),
+      ])
+    );
+    mappings = unifyMerchantMappings(mappings, memoSamples);
+    console.log("Applied alias discovery to unify canonical merchant names.");
 
     console.log("Inserting merchant mappings...");
     for (const map of mappings) {

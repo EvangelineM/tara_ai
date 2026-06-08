@@ -1,0 +1,170 @@
+[
+  {
+    "fund_id": "sample_a_fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund (Sample A)",
+    "units": 159.07,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 121.4
+  },
+  {
+    "fund_id": "sample_a_fund_growth",
+    "fund_name": "Kestrel Emerging Growth Fund (Sample A)",
+    "units": 58.6,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 51.31
+  },
+  {
+    "fund_id": "sample_a_fund_value",
+    "fund_name": "Meridian Value Opportunities Fund (Sample A)",
+    "units": 160.57,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 101.8
+  },
+  {
+    "fund_id": "sample_a_fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund (Sample A)",
+    "units": 206.71,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 33.22
+  },
+  {
+    "fund_id": "sample_a_fund_gold",
+    "fund_name": "Apex Gold Savings Fund (Sample A)",
+    "units": 31.13,
+    "purchase_date": "2023-10-01",
+    "purchase_nav": 47.16
+  },
+  {
+    "fund_id": "sample_a_fund_international",
+    "fund_name": "Polaris Global Technology Fund (Sample A)",
+    "units": 169.03,
+    "purchase_date": "2023-04-01",
+    "purchase_nav": 76.4
+  },
+  {
+    "fund_id": "sample_a_fund_index",
+    "fund_name": "Sentinel Nifty Index Fund (Sample A)",
+    "units": 196.39,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 168.49
+  },
+  {
+    "fund_id": "sample_a_fund_tax_saver",
+    "fund_name": "Olive Tax Saver ELSS Fund (Sample A)",
+    "units": 67.58,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 64.43
+  },
+  {
+    "fund_id": "sample_b_fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund (Sample B)",
+    "units": 62.39,
+    "purchase_date": "2023-09-01",
+    "purchase_nav": 99.78
+  },
+  {
+    "fund_id": "sample_b_fund_growth",
+    "fund_name": "Kestrel Emerging Growth Fund (Sample B)",
+    "units": 130.73,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 59.73
+  },
+  {
+    "fund_id": "sample_b_fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund (Sample B)",
+    "units": 43.65,
+    "purchase_date": "2023-09-01",
+    "purchase_nav": 31.45
+  },
+  {
+    "fund_id": "sample_b_fund_international",
+    "fund_name": "Polaris Global Technology Fund (Sample B)",
+    "units": 164.56,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 80.8
+  },
+  {
+    "fund_id": "sample_b_fund_index",
+    "fund_name": "Sentinel Nifty Index Fund (Sample B)",
+    "units": 146.5,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 169.7
+  },
+  {
+    "fund_id": "sample_b_fund_smallcap",
+    "fund_name": "Vortex Small Cap Discovery Fund (Sample B)",
+    "units": 215.51,
+    "purchase_date": "2023-04-01",
+    "purchase_nav": 38.2
+  },
+  {
+    "fund_id": "sample_b_fund_healthcare",
+    "fund_name": "Helios Healthcare Sector Fund (Sample B)",
+    "units": 192.36,
+    "purchase_date": "2023-10-01",
+    "purchase_nav": 50.69
+  },
+  {
+    "fund_id": "sample_b_fund_balanced",
+    "fund_name": "Orchid Balanced Advantage Fund (Sample B)",
+    "units": 148.5,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 47.76
+  },
+  {
+    "fund_id": "sample_c_fund_bluechip",
+    "fund_name": "Saffron Bluechip Equity Fund (Sample C)",
+    "units": 107.13,
+    "purchase_date": "2023-07-01",
+    "purchase_nav": 110.3
+  },
+  {
+    "fund_id": "sample_c_fund_value",
+    "fund_name": "Meridian Value Opportunities Fund (Sample C)",
+    "units": 90.36,
+    "purchase_date": "2023-05-01",
+    "purchase_nav": 86.49
+  },
+  {
+    "fund_id": "sample_c_fund_debt",
+    "fund_name": "Indigo Short Duration Debt Fund (Sample C)",
+    "units": 56.37,
+    "purchase_date": "2024-03-01",
+    "purchase_nav": 34.13
+  },
+  {
+    "fund_id": "sample_c_fund_gold",
+    "fund_name": "Apex Gold Savings Fund (Sample C)",
+    "units": 87.66,
+    "purchase_date": "2023-11-01",
+    "purchase_nav": 39.59
+  },
+  {
+    "fund_id": "sample_c_fund_index",
+    "fund_name": "Sentinel Nifty Index Fund (Sample C)",
+    "units": 85.43,
+    "purchase_date": "2023-12-01",
+    "purchase_nav": 153.07
+  },
+  {
+    "fund_id": "sample_c_fund_tax_saver",
+    "fund_name": "Olive Tax Saver ELSS Fund (Sample C)",
+    "units": 128.46,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 65.57
+  },
+  {
+    "fund_id": "sample_c_fund_silver",
+    "fund_name": "Apex Silver Savings Fund (Sample C)",
+    "units": 112.02,
+    "purchase_date": "2024-01-01",
+    "purchase_nav": 30.69
+  },
+  {
+    "fund_id": "sample_c_fund_balanced",
+    "fund_name": "Orchid Balanced Advantage Fund (Sample C)",
+    "units": 161.56,
+    "purchase_date": "2023-06-01",
+    "purchase_nav": 45.62
+  }
+]

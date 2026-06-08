@@ -19,6 +19,7 @@ import { pool } from "../db/connection";
 import { answerQuestion } from "../lib/ask-service";
 import { classifyQuestion } from "../lib/question-classifier";
 import { buildInsights } from "../lib/insights-builder";
+import { autoSwitchDatasetIfNeeded } from "../lib/dataset-detector";
 
 const PROJECT_ROOT = getProjectRoot();
 
@@ -111,6 +112,12 @@ export const mastra = new Mastra({
             const category = c.req.query("category")?.trim() || undefined;
             const dateFrom = c.req.query("dateFrom")?.trim() || undefined;
             const dateTo = c.req.query("dateTo")?.trim() || undefined;
+
+            let datasetSwitched = false;
+            if (search) {
+              datasetSwitched = await autoSwitchDatasetIfNeeded(search);
+            }
+
             const hasFilters = !!(search || category || dateFrom || dateTo);
 
             const result = (await transactionTool.execute!(
@@ -128,6 +135,7 @@ export const mastra = new Mastra({
             return c.json({
               transactions: result?.transactions || [],
               filtered: hasFilters,
+              datasetSwitched,
             });
           } catch (err) {
             console.error("Transactions API error:", err);
@@ -208,14 +216,16 @@ export const mastra = new Mastra({
             const overview = overviewRes?.overview || null;
             const bestFund = bestFundRes?.best_performing_fund || null;
 
+            const holdings = holdingsRes?.holdings || [];
+
             const insights = await buildInsights(
-              { overview, categories, monthly, best_fund: bestFund },
+              { overview, categories, monthly, best_fund: bestFund, holdings },
               pool
             );
 
             return c.json({
               overview,
-              holdings: holdingsRes?.holdings || [],
+              holdings,
               allocation: allocationRes || null,
               performance: performanceRes?.performance || [],
               transactions: txnsRes?.transactions || [],
@@ -244,12 +254,14 @@ export const mastra = new Mastra({
               return c.json({ error: "Missing question parameter" }, 400);
             }
 
+            const datasetSwitched = await autoSwitchDatasetIfNeeded(question);
+
             const intent = classifyQuestion(question);
 
             if (intent !== "general") {
               try {
                 const structured = await answerQuestion(question);
-                return c.json({ structured: true, ...structured });
+                return c.json({ structured: true, ...structured, datasetSwitched });
               } catch (err) {
                 const msg = (err as Error).message;
                 if (msg.startsWith("INCONSISTENT_RESPONSE")) {
@@ -283,6 +295,7 @@ export const mastra = new Mastra({
                   details: "",
                   source: "agent",
                   metadata: { intent: "general" },
+                  datasetSwitched,
                 });
               } catch (err: any) {
                 lastError = err;

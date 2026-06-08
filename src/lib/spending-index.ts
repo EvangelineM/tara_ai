@@ -1,4 +1,6 @@
 import type { Pool, PoolClient } from "pg";
+import { loadMerchantRegistry } from "./merchant-service";
+import { cleanMerchantKey, matchMerchantTerm } from "./merchant-resolver";
 
 type Queryable = Pool | PoolClient;
 
@@ -161,11 +163,28 @@ export async function matchByTransactionText(
   const term = normalizeTerm(userTerm);
   if (!term) return null;
 
-  const patterns = topicSearchPatterns(term);
-  const memoConditions = patterns
+  const registry = await loadMerchantRegistry(db);
+  const merchantMatch = matchMerchantTerm(term, registry);
+
+  const patterns = new Set<string>();
+  for (const p of topicSearchPatterns(term)) {
+    patterns.add(p);
+  }
+
+  if (merchantMatch) {
+    for (const key of merchantMatch.group.aliasKeys) {
+      if (key.length >= 2) patterns.add(`%${key}%`);
+    }
+    for (const name of merchantMatch.group.displayNames) {
+      patterns.add(`%${cleanMerchantKey(name)}%`);
+    }
+  }
+
+  const patternArray = Array.from(patterns);
+  const memoConditions = patternArray
     .map(
       (_, i) =>
-        `(t.memo ILIKE $${i + 1} OR m.normalized_merchant ILIKE $${i + 1} OR t.merchant ILIKE $${i + 1})`
+        `(t.memo ILIKE $${i + 1} OR m.normalized_merchant ILIKE $${i + 1})`
     )
     .join(" OR ");
 
@@ -181,7 +200,7 @@ export async function matchByTransactionText(
       AND m.category !~* 'transfer'
       AND t.category !~* 'transfer'
       `,
-      patterns
+      patternArray
     );
     return res.rows as { category: string; normalized_merchant: string }[];
   });
