@@ -14,12 +14,13 @@ Full-stack personal finance dashboard with an AI assistant. Tara aggregates port
 
 <table>
 	<tr>
-		<td align="center"><strong>Overview</strong><br><img src="docs/images/overview.png" width="420" alt="Overview screenshot"></td>
-		<td align="center"><strong>Dashboard</strong><br><img src="docs/images/dashboard.png" width="420" alt="Dashboard screenshot"></td>
+		<td align="center"><strong>Overview</strong><br><img src="assets/ask_tara.png" width="420" alt="Overview screenshot"></td>
+		<td align="center"><strong>Dashboard</strong><br><img src="assets/overview.png" width="420" alt="Dashboard screenshot"></td>
 	</tr>
 	<tr>
-		<td align="center"><strong>Transactions</strong><br><img src="docs/images/transactions.png" width="420" alt="Transactions screenshot"></td>
-		<td align="center"><strong>Ask Tara</strong><br><img src="docs/images/ask.png" width="420" alt="Ask Tara screenshot"></td>
+		<td align="center"><strong>Transactions</strong><br><img src="assets/transactions.png" width="420" alt="Transactions screenshot"></td>
+		<td align="center"><strong>Ask Tara</strong><br><img src="assets/investments.png" width="420" alt="Ask Tara screenshot"></td>
+        <td align="center"><strong>Ask Tara</strong><br><img src="assets/insights.png" width="420" alt="Ask Tara screenshot"></td>
 	</tr>
 </table>
 
@@ -67,10 +68,6 @@ npm run dev
 
 Open `http://localhost:4111` for the dashboard and Mastra Studio.
 
-## Default Credentials
-
-- No admin account is created by default. The server auto-ingests sample data on first run — create users via the UI or database.
-
 ## Environment Variables
 
 - `DATABASE_URL` (required) — PostgreSQL connection string
@@ -84,15 +81,6 @@ Open `http://localhost:4111` for the dashboard and Mastra Studio.
 - `src/mastra/` — agents, tools, workflows, scorers
 - `src/lib/` — finance queries, ask service, insights builder, normalization
 - `src/db/` — database connection
-
-## Demo images to include (paths and purpose)
-
-- `docs/images/overview.png` — REQUIRED: hero screenshot (recommended size 1200×600)
-- `docs/images/dashboard.png` — optional: dashboard charts and widgets
-- `docs/images/transactions.png` — optional: transactions list and filters
-- `docs/images/ask.png` — optional: Ask Tara UI or chat screenshot
-
-Place the hero image at the top of this README using the path `docs/images/overview.png`.
 
 ## Scripts
 

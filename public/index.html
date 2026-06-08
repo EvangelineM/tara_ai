@@ -1,1182 +1,1502 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tara — Personal Finance</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #FAFAF8;
-      --surface: #FFFFFF;
-      --border: #E8E8E4;
-      --border-light: #F0F0EC;
-      --text: #1A1A1A;
-      --text-secondary: #666666;
-      --text-tertiary: #999999;
-      --accent: #1B3A4B;
-      --accent-hover: #153040;
-      --positive: #2D6A4F;
-      --positive-bg: #EDF5F0;
-      --negative: #B85450;
-      --negative-bg: #FAF0EF;
-      --sidebar-width: 240px;
-      --radius: 12px;
-      --radius-sm: 8px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-      --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .app {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: var(--sidebar-width);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      z-index: 200;
-      transition: transform 0.25s ease;
-    }
-
-    .sidebar-brand {
-      padding: 1.5rem 1.25rem;
-      border-bottom: 1px solid var(--border-light);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: none;
-      border-left: none;
-      border-right: none;
-      border-top: none;
-      cursor: pointer;
-      width: 100%;
-      text-align: left;
-      font-family: inherit;
-      transition: background 0.15s;
-    }
-
-    .sidebar-brand:hover {
-      background: var(--bg);
-    }
-
-    .brand-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--accent);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
-    }
-
-    .brand-name {
-      font-weight: 700;
-      font-size: 1.125rem;
-      letter-spacing: -0.03em;
-      color: var(--text);
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 1rem 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.65rem 0.85rem;
-      border-radius: var(--radius-sm);
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      text-align: left;
-      width: 100%;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .nav-item:hover {
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .nav-item.active {
-      background: var(--bg);
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .nav-item svg {
-      flex-shrink: 0;
-      opacity: 0.7;
-    }
-
-    .nav-item.active svg { opacity: 1; }
-
-    .nav-item.ask-tara-nav {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .nav-item.ask-tara-nav:hover {
-      background: var(--accent-hover);
-      color: #fff;
-    }
-
-    .nav-item.ask-tara-nav.active {
-      background: var(--accent-hover);
-      color: #fff;
-    }
-
-    /* Main */
-    .main {
-      flex: 1;
-      margin-left: var(--sidebar-width);
-      min-width: 0;
-    }
-
-    .main-header {
-      padding: 1.25rem 2rem;
-      border-bottom: 1px solid var(--border-light);
-      background: var(--bg);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .mobile-menu-btn {
-      display: none;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.5rem;
-      cursor: pointer;
-      color: var(--text);
-    }
-
-    .main-content {
-      padding: 2rem;
-      max-width: 1200px;
-    }
-
-    .section { display: none; }
-    .section.active { display: block; }
-
-    /* Hero */
-    .hero-greeting {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.35rem;
-      color: var(--text);
-    }
-
-    .hero-sub {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      margin-bottom: 1.75rem;
-    }
-
-    /* Metric cards */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .metric-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem 1.35rem;
-      box-shadow: var(--shadow);
-    }
-
-    .metric-label {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .metric-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      margin-bottom: 0.35rem;
-    }
-
-    .metric-change {
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .metric-change.positive { color: var(--positive); }
-    .metric-change.negative { color: var(--negative); }
-    .metric-change.neutral { color: var(--text-tertiary); }
-
-    /* Charts */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .chart-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      box-shadow: var(--shadow);
-    }
-
-    .chart-card.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .chart-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 1rem;
-      letter-spacing: -0.01em;
-    }
-
-    .chart-wrap {
-      position: relative;
-      height: 220px;
-    }
-
-    .chart-wrap.tall { height: 260px; }
-
-    /* Merchants list */
-    .merchants-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .merchant-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .merchant-row:last-child { border-bottom: none; }
-
-    .merchant-rank {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-right: 0.75rem;
-    }
-
-    .merchant-info {
-      flex: 1;
-      display: flex;
-      align-items: center;
-    }
-
-    .merchant-name {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .merchant-amount {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Section headers */
-    .section-header {
-      margin-bottom: 1.5rem;
-    }
-
-    .section-title {
-      font-size: 1.35rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.25rem;
-    }
-
-    .section-desc {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-
-    /* Filters bar */
-    .filters-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      align-items: center;
-    }
-
-    .filter-input, .filter-select {
-      padding: 0.55rem 0.85rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-family: inherit;
-      background: var(--surface);
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    .filter-input:focus, .filter-select:focus {
-      border-color: var(--accent);
-    }
-
-    .filter-input { min-width: 200px; flex: 1; max-width: 280px; }
-
-    /* Tables */
-    .table-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-
-    .data-table th {
-      text-align: left;
-      padding: 0.85rem 1.25rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-    }
-
-    .data-table th:hover { color: var(--text); }
-
-    .data-table td {
-      padding: 0.85rem 1.25rem;
-      border-bottom: 1px solid var(--border-light);
-      color: var(--text);
-    }
-
-    .data-table tr:last-child td { border-bottom: none; }
-    .data-table tbody tr:hover td { background: #FDFDFB; }
-
-    .category-tag {
-      display: inline-block;
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      background: var(--bg);
-      color: var(--text-secondary);
-      text-transform: capitalize;
-    }
-
-    .amount-cell {
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-    }
-
-    .amount-cell.positive { color: var(--positive); }
-    .amount-cell.negative { color: var(--negative); }
-
-    .perf-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .perf-badge.up { background: var(--positive-bg); color: var(--positive); }
-    .perf-badge.down { background: var(--negative-bg); color: var(--negative); }
-
-    /* Insights */
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-
-    .insight-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem 1.35rem;
-      box-shadow: var(--shadow);
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-    }
-
-    .insight-icon {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      margin-top: 0.45rem;
-    }
-
-    .insight-text {
-      font-size: 0.9rem;
-      color: var(--text);
-      line-height: 1.55;
-    }
-
-    .insight-text strong {
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    /* Ask Tara */
-    .ask-hero {
-      max-width: 720px;
-      margin-bottom: 2rem;
-    }
-
-    .ask-input-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-md);
-      padding: 0.25rem;
-      margin-bottom: 1rem;
-    }
-
-    .ask-textarea {
-      width: 100%;
-      border: none;
-      outline: none;
-      padding: 1rem 1.15rem;
-      font-size: 1rem;
-      font-family: inherit;
-      color: var(--text);
-      resize: vertical;
-      min-height: 56px;
-      background: transparent;
-      line-height: 1.5;
-    }
-
-    .ask-textarea::placeholder { color: var(--text-tertiary); }
-
-    .ask-actions {
-      display: flex;
-      justify-content: flex-end;
-      padding: 0 0.75rem 0.75rem;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 0.65rem 1.5rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .chips-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .chip {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      padding: 0.45rem 0.85rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .chip:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: #F5F8F9;
-    }
-
-    /* Structured answer */
-    .answer-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      max-width: 720px;
-    }
-
-    .answer-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem 1.35rem;
-      box-shadow: var(--shadow);
-    }
-
-    .answer-block-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-tertiary);
-      margin-bottom: 0.5rem;
-    }
-
-    .answer-block-content {
-      font-size: 0.95rem;
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .answer-block-content.answer-main {
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .answer-block-content.md-body p { margin: 0.4em 0; }
-    .answer-block-content.md-body p:first-child { margin-top: 0; }
-    .answer-block-content.md-body ul { padding-left: 1.25em; margin: 0.4em 0; }
-
-    .answer-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      padding: 1rem 0;
-    }
-
-    .loading-dots span {
-      display: inline-block;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--text-tertiary);
-      animation: pulse 1.2s infinite ease-in-out;
-    }
-
-    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; transform: scale(0.85); }
-      50% { opacity: 1; transform: scale(1); }
-    }
-
-    /* Loader overlay */
-    .page-loader {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      z-index: 1000;
-      transition: opacity 0.3s;
-    }
-
-    .page-loader.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .loader-spinner {
-      width: 32px;
-      height: 32px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.3);
-      z-index: 150;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .charts-grid { grid-template-columns: 1fr; }
-      .insights-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tara — Personal Finance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #fafaf8;
+        --surface: #ffffff;
+        --border: #e8e8e4;
+        --border-light: #f0f0ec;
+        --text: #1a1a1a;
+        --text-secondary: #666666;
+        --text-tertiary: #999999;
+        --accent: #1b3a4b;
+        --accent-hover: #153040;
+        --positive: #2d6a4f;
+        --positive-bg: #edf5f0;
+        --negative: #b85450;
+        --negative-bg: #faf0ef;
+        --sidebar-width: 240px;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+        --shadow-md:
+          0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
       }
-      .sidebar.open { transform: translateX(0); }
-      .sidebar-overlay.open { display: block; }
-      .main { margin-left: 0; }
-      .mobile-menu-btn { display: flex; }
-      .main-content { padding: 1.25rem; }
-      .metrics-grid { grid-template-columns: 1fr; }
-      .main-header { padding: 1rem 1.25rem; }
-      .hero-greeting { font-size: 1.4rem; }
-      .filters-bar { flex-direction: column; align-items: stretch; }
-      .filter-input { max-width: none; }
-      .data-table { font-size: 0.8rem; }
-      .data-table th, .data-table td { padding: 0.65rem 0.85rem; }
-    }
-  </style>
-</head>
-<body>
 
-  <div id="pageLoader" class="page-loader">
-    <div class="loader-spinner"></div>
-    <span style="font-size:0.9rem;color:var(--text-secondary);">Loading your finances...</span>
-  </div>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
 
-  <div class="app">
-    <aside class="sidebar" id="sidebar">
-      <button type="button" class="sidebar-brand" id="brandHome" aria-label="Go to Home">
-        <div class="brand-mark">T</div>
-        <span class="brand-name">Tara</span>
-      </button>
-      <nav class="sidebar-nav">
-        <button class="nav-item ask-tara-nav active" data-section="ask">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Ask Tara
-        </button>
-        <button class="nav-item" data-section="overview">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Overview
-        </button>
-        <button class="nav-item" data-section="transactions">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Transactions
-        </button>
-        <button class="nav-item" data-section="investments">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-          Investments
-        </button>
-        <button class="nav-item" data-section="insights">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          Insights
-        </button>
-      </nav>
-    </aside>
+      .app {
+        display: flex;
+        min-height: 100vh;
+      }
 
-    <div class="main">
-      <header class="main-header">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 200;
+        transition: transform 0.25s ease;
+      }
+
+      .sidebar-brand {
+        padding: 1.5rem 1.25rem;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: none;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        font-family: inherit;
+        transition: background 0.15s;
+      }
+
+      .sidebar-brand:hover {
+        background: var(--bg);
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-name {
+        font-weight: 700;
+        font-size: 1.125rem;
+        letter-spacing: -0.03em;
+        color: var(--text);
+      }
+
+      .sidebar-nav {
+        flex: 1;
+        padding: 1rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+
+      .nav-item:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .nav-item.active {
+        background: var(--bg);
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .nav-item svg {
+        flex-shrink: 0;
+        opacity: 0.7;
+      }
+
+      .nav-item.active svg {
+        opacity: 1;
+      }
+
+      .nav-item.ask-tara-nav {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .nav-item.ask-tara-nav:hover {
+        background: var(--accent-hover);
+        color: #fff;
+      }
+
+      .nav-item.ask-tara-nav.active {
+        background: var(--accent-hover);
+        color: #fff;
+      }
+
+      /* Main */
+      .main {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-width: 0;
+      }
+
+      .main-header {
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid var(--border-light);
+        background: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem;
+        cursor: pointer;
+        color: var(--text);
+      }
+
+      .main-content {
+        padding: 2rem;
+        max-width: 1200px;
+      }
+
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+
+      /* Hero */
+      .hero-greeting {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.35rem;
+        color: var(--text);
+      }
+
+      .hero-sub {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.75rem;
+      }
+
+      /* Metric cards */
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.35rem;
+        box-shadow: var(--shadow);
+      }
+
+      .metric-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--text);
+        margin-bottom: 0.35rem;
+      }
+
+      .metric-change {
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .metric-change.positive {
+        color: var(--positive);
+      }
+      .metric-change.negative {
+        color: var(--negative);
+      }
+      .metric-change.neutral {
+        color: var(--text-tertiary);
+      }
+
+      /* Charts */
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .chart-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        box-shadow: var(--shadow);
+      }
+
+      .chart-card.full-width {
+        grid-column: 1 / -1;
+      }
+
+      .chart-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .chart-wrap {
+        position: relative;
+        height: 220px;
+      }
+
+      .chart-wrap.tall {
+        height: 260px;
+      }
+
+      /* Merchants list */
+      .merchants-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .merchant-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .merchant-row:last-child {
+        border-bottom: none;
+      }
+
+      .merchant-rank {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-right: 0.75rem;
+      }
+
+      .merchant-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      .merchant-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .merchant-amount {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Section headers */
+      .section-header {
+        margin-bottom: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.25rem;
+      }
+
+      .section-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      /* Filters bar */
+      .filters-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        align-items: center;
+      }
+
+      .filter-input,
+      .filter-select {
+        padding: 0.55rem 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-family: inherit;
+        background: var(--surface);
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .filter-input:focus,
+      .filter-select:focus {
+        border-color: var(--accent);
+      }
+
+      .filter-input {
+        min-width: 200px;
+        flex: 1;
+        max-width: 280px;
+      }
+
+      /* Tables */
+      .table-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .data-table th {
+        text-align: left;
+        padding: 0.85rem 1.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .data-table th:hover {
+        color: var(--text);
+      }
+
+      .data-table td {
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--border-light);
+        color: var(--text);
+      }
+
+      .data-table tr:last-child td {
+        border-bottom: none;
+      }
+      .data-table tbody tr:hover td {
+        background: #fdfdfb;
+      }
+
+      .category-tag {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: var(--bg);
+        color: var(--text-secondary);
+        text-transform: capitalize;
+      }
+
+      .amount-cell {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      .amount-cell.positive {
+        color: var(--positive);
+      }
+      .amount-cell.negative {
+        color: var(--negative);
+      }
+
+      .perf-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .perf-badge.up {
+        background: var(--positive-bg);
+        color: var(--positive);
+      }
+      .perf-badge.down {
+        background: var(--negative-bg);
+        color: var(--negative);
+      }
+
+      /* Insights */
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .insight-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.35rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .insight-icon {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+        margin-top: 0.45rem;
+      }
+
+      .insight-text {
+        font-size: 0.9rem;
+        color: var(--text);
+        line-height: 1.55;
+      }
+
+      .insight-text strong {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      /* Ask Tara */
+      .ask-hero {
+        max-width: 720px;
+        margin-bottom: 2rem;
+      }
+
+      .ask-input-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 0.25rem;
+        margin-bottom: 1rem;
+      }
+
+      .ask-textarea {
+        width: 100%;
+        border: none;
+        outline: none;
+        padding: 1rem 1.15rem;
+        font-size: 1rem;
+        font-family: inherit;
+        color: var(--text);
+        resize: vertical;
+        min-height: 56px;
+        background: transparent;
+        line-height: 1.5;
+      }
+
+      .ask-textarea::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      .ask-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 0.75rem 0.75rem;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 0.65rem 1.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .chips-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .chip {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 0.45rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #f5f8f9;
+      }
+
+      /* Structured answer */
+      .answer-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 720px;
+      }
+
+      .answer-block {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.35rem;
+        box-shadow: var(--shadow);
+      }
+
+      .answer-block-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-tertiary);
+        margin-bottom: 0.5rem;
+      }
+
+      .answer-block-content {
+        font-size: 0.95rem;
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .answer-block-content.answer-main {
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .answer-block-content.md-body p {
+        margin: 0.4em 0;
+      }
+      .answer-block-content.md-body p:first-child {
+        margin-top: 0;
+      }
+      .answer-block-content.md-body ul {
+        padding-left: 1.25em;
+        margin: 0.4em 0;
+      }
+
+      .answer-loading {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        padding: 1rem 0;
+      }
+
+      .loading-dots span {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--text-tertiary);
+        animation: pulse 1.2s infinite ease-in-out;
+      }
+
+      .loading-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .loading-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scale(0.85);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* Loader overlay */
+      .page-loader {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        z-index: 1000;
+        transition: opacity 0.3s;
+      }
+
+      .page-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loader-spinner {
+        width: 32px;
+        height: 32px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 150;
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .metrics-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .charts-grid {
+          grid-template-columns: 1fr;
+        }
+        .insights-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .sidebar-overlay.open {
+          display: block;
+        }
+        .main {
+          margin-left: 0;
+        }
+        .mobile-menu-btn {
+          display: flex;
+        }
+        .main-content {
+          padding: 1.25rem;
+        }
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+        .main-header {
+          padding: 1rem 1.25rem;
+        }
+        .hero-greeting {
+          font-size: 1.4rem;
+        }
+        .filters-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .filter-input {
+          max-width: none;
+        }
+        .data-table {
+          font-size: 0.8rem;
+        }
+        .data-table th,
+        .data-table td {
+          padding: 0.65rem 0.85rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="pageLoader" class="page-loader">
+      <div class="loader-spinner"></div>
+      <span style="font-size: 0.9rem; color: var(--text-secondary)"
+        >Loading your finances...</span
+      >
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+      <aside class="sidebar" id="sidebar">
+        <button
+          type="button"
+          class="sidebar-brand"
+          id="brandHome"
+          aria-label="Go to Home"
+        >
+          <div class="brand-mark">T</div>
+          <span class="brand-name">Tara</span>
         </button>
-        <span style="font-size:0.85rem;color:var(--text-secondary);" id="headerDate"></span>
-      </header>
+        <nav class="sidebar-nav">
+          <button class="nav-item ask-tara-nav active" data-section="ask">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              />
+            </svg>
+            Ask Tara
+          </button>
+          <button class="nav-item" data-section="overview">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Overview
+          </button>
+          <button class="nav-item" data-section="transactions">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+            Transactions
+          </button>
+          <button class="nav-item" data-section="investments">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
+            </svg>
+            Investments
+          </button>
+          <button class="nav-item" data-section="insights">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            Insights
+          </button>
+        </nav>
+      </aside>
 
-      <div class="main-content">
+      <div class="main">
+        <header class="main-header">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <span
+            style="font-size: 0.85rem; color: var(--text-secondary)"
+            id="headerDate"
+          ></span>
+        </header>
 
-        <!-- Ask Tara (Home) -->
-        <section id="section-ask" class="section active">
-          <h1 class="hero-greeting" id="heroGreeting">Good morning</h1>
-          <p class="hero-sub">Ask Tara anything about your spending, investments, and portfolio.</p>
-          <div class="ask-hero">
-            <div class="ask-input-wrap">
-              <textarea class="ask-textarea" id="askInput" rows="2" placeholder="Ask Tara anything about your finances..."></textarea>
-              <div class="ask-actions">
-                <button type="button" class="btn-primary" id="askSubmitBtn">Ask Tara</button>
+        <div class="main-content">
+          <!-- Ask Tara (Home) -->
+          <section id="section-ask" class="section active">
+            <h1 class="hero-greeting" id="heroGreeting">Good morning</h1>
+            <p class="hero-sub">
+              Ask Tara anything about your spending, investments, and portfolio.
+            </p>
+            <div class="ask-hero">
+              <div class="ask-input-wrap">
+                <textarea
+                  class="ask-textarea"
+                  id="askInput"
+                  rows="2"
+                  placeholder="Ask Tara anything about your finances..."
+                ></textarea>
+                <div class="ask-actions">
+                  <button type="button" class="btn-primary" id="askSubmitBtn">
+                    Ask Tara
+                  </button>
+                </div>
+              </div>
+              <div class="chips-row" id="askChips">
+                <button
+                  type="button"
+                  class="chip"
+                  data-q="How much did I spend on food?"
+                >
+                  How much did I spend on food?
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  data-q="What was my biggest expense?"
+                >
+                  What was my biggest expense?
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  data-q="Compare travel and food spending."
+                >
+                  Compare travel and food spending.
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  data-q="Which fund performed best?"
+                >
+                  Which fund performed best?
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  data-q="What is my portfolio worth today?"
+                >
+                  What is my portfolio worth today?
+                </button>
               </div>
             </div>
-            <div class="chips-row" id="askChips">
-              <button type="button" class="chip" data-q="How much did I spend on food?">How much did I spend on food?</button>
-              <button type="button" class="chip" data-q="What was my biggest expense?">What was my biggest expense?</button>
-              <button type="button" class="chip" data-q="Compare travel and food spending.">Compare travel and food spending.</button>
-              <button type="button" class="chip" data-q="Which fund performed best?">Which fund performed best?</button>
-              <button type="button" class="chip" data-q="What is my portfolio worth today?">What is my portfolio worth today?</button>
-            </div>
-          </div>
-          <div class="answer-stack" id="answerStack"></div>
-        </section>
+            <div class="answer-stack" id="answerStack"></div>
+          </section>
 
-        <!-- Overview -->
-        <section id="section-overview" class="section">
-          <div class="section-header">
-            <h2 class="section-title">Overview</h2>
-            <p class="section-desc">Here's your financial overview.</p>
-          </div>
+          <!-- Overview -->
+          <section id="section-overview" class="section">
+            <div class="section-header">
+              <h2 class="section-title">Overview</h2>
+              <p class="section-desc">Here's your financial overview.</p>
+            </div>
 
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-label">Portfolio Value</div>
-              <div class="metric-value" id="metricPortfolio">—</div>
-              <div class="metric-change positive" id="metricPortfolioChange">—</div>
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Portfolio Value</div>
+                <div class="metric-value" id="metricPortfolio">—</div>
+                <div class="metric-change positive" id="metricPortfolioChange">
+                  —
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Monthly Spend</div>
+                <div class="metric-value" id="metricSpend">—</div>
+                <div class="metric-change neutral" id="metricSpendChange">
+                  —
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Investment Returns</div>
+                <div class="metric-value" id="metricReturns">—</div>
+                <div class="metric-change positive" id="metricReturnsChange">
+                  —
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Top Spending Category</div>
+                <div
+                  class="metric-value"
+                  id="metricTopCategory"
+                  style="font-size: 1.15rem"
+                >
+                  —
+                </div>
+                <div class="metric-change neutral" id="metricTopCategoryAmt">
+                  —
+                </div>
+              </div>
             </div>
-            <div class="metric-card">
-              <div class="metric-label">Monthly Spend</div>
-              <div class="metric-value" id="metricSpend">—</div>
-              <div class="metric-change neutral" id="metricSpendChange">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Investment Returns</div>
-              <div class="metric-value" id="metricReturns">—</div>
-              <div class="metric-change positive" id="metricReturnsChange">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Top Spending Category</div>
-              <div class="metric-value" id="metricTopCategory" style="font-size:1.15rem;">—</div>
-              <div class="metric-change neutral" id="metricTopCategoryAmt">—</div>
-            </div>
-          </div>
 
-          <div class="charts-grid">
-            <div class="chart-card">
-              <div class="chart-title">Monthly Spending Trend</div>
-              <div class="chart-wrap"><canvas id="chartSpending"></canvas></div>
+            <div class="charts-grid">
+              <div class="chart-card">
+                <div class="chart-title">Monthly Spending Trend</div>
+                <div class="chart-wrap">
+                  <canvas id="chartSpending"></canvas>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-title">Spending by Category</div>
+                <div class="chart-wrap">
+                  <canvas id="chartCategories"></canvas>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-title">Portfolio Growth</div>
+                <div class="chart-wrap tall">
+                  <canvas id="chartPortfolio"></canvas>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-title">Top Merchants</div>
+                <div class="merchants-list" id="topMerchantsList"></div>
+              </div>
             </div>
-            <div class="chart-card">
-              <div class="chart-title">Spending by Category</div>
-              <div class="chart-wrap"><canvas id="chartCategories"></canvas></div>
+          </section>
+
+          <!-- Transactions -->
+          <section id="section-transactions" class="section">
+            <div class="section-header">
+              <h2 class="section-title">Transactions</h2>
+              <p class="section-desc" id="txnSectionDesc">
+                Your 10 most recent transactions.
+              </p>
             </div>
-            <div class="chart-card">
-              <div class="chart-title">Portfolio Growth</div>
-              <div class="chart-wrap tall"><canvas id="chartPortfolio"></canvas></div>
+            <div class="filters-bar">
+              <input
+                type="search"
+                class="filter-input"
+                id="txnSearch"
+                placeholder="Search merchants..."
+              />
+              <select class="filter-select" id="txnCategory">
+                <option value="">All categories</option>
+              </select>
+              <input
+                type="date"
+                class="filter-select"
+                id="txnDateFrom"
+                title="From date"
+              />
+              <input
+                type="date"
+                class="filter-select"
+                id="txnDateTo"
+                title="To date"
+              />
             </div>
-            <div class="chart-card">
-              <div class="chart-title">Top Merchants</div>
-              <div class="merchants-list" id="topMerchantsList"></div>
+            <div class="table-card">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-sort="date">Date</th>
+                    <th data-sort="merchant">Merchant</th>
+                    <th data-sort="category">Category</th>
+                    <th data-sort="amount" style="text-align: right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="txnTableBody"></tbody>
+              </table>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Transactions -->
-        <section id="section-transactions" class="section">
-          <div class="section-header">
-            <h2 class="section-title">Transactions</h2>
-            <p class="section-desc" id="txnSectionDesc">Your 10 most recent transactions.</p>
-          </div>
-          <div class="filters-bar">
-            <input type="search" class="filter-input" id="txnSearch" placeholder="Search merchants...">
-            <select class="filter-select" id="txnCategory">
-              <option value="">All categories</option>
-            </select>
-            <input type="date" class="filter-select" id="txnDateFrom" title="From date">
-            <input type="date" class="filter-select" id="txnDateTo" title="To date">
-          </div>
-          <div class="table-card">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th data-sort="date">Date</th>
-                  <th data-sort="merchant">Merchant</th>
-                  <th data-sort="category">Category</th>
-                  <th data-sort="amount" style="text-align:right;">Amount</th>
-                </tr>
-              </thead>
-              <tbody id="txnTableBody"></tbody>
-            </table>
-          </div>
-        </section>
+          <!-- Investments -->
+          <section id="section-investments" class="section">
+            <div class="section-header">
+              <h2 class="section-title">Investments</h2>
+              <p class="section-desc">
+                Your mutual fund portfolio and performance.
+              </p>
+            </div>
+            <div class="table-card">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fund Name</th>
+                    <th>Units Held</th>
+                    <th>Purchase NAV</th>
+                    <th>Current NAV</th>
+                    <th>Current Value</th>
+                    <th>Gain/Loss</th>
+                    <th style="text-align: right">Return %</th>
+                  </tr>
+                </thead>
+                <tbody id="holdingsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
 
-        <!-- Investments -->
-        <section id="section-investments" class="section">
-          <div class="section-header">
-            <h2 class="section-title">Investments</h2>
-            <p class="section-desc">Your mutual fund portfolio and performance.</p>
-          </div>
-          <div class="table-card">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Fund Name</th>
-                  <th>Units Held</th>
-                  <th>Purchase NAV</th>
-                  <th>Current NAV</th>
-                  <th>Current Value</th>
-                  <th>Gain/Loss</th>
-                  <th style="text-align:right;">Return %</th>
-                </tr>
-              </thead>
-              <tbody id="holdingsTableBody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Insights -->
-        <section id="section-insights" class="section">
-          <div class="section-header">
-            <h2 class="section-title">Insights</h2>
-            <p class="section-desc">Automatically generated observations from your finances.</p>
-          </div>
-          <div class="insights-grid" id="insightsGrid"></div>
-        </section>
-
+          <!-- Insights -->
+          <section id="section-insights" class="section">
+            <div class="section-header">
+              <h2 class="section-title">Insights</h2>
+              <p class="section-desc">
+                Automatically generated observations from your finances.
+              </p>
+            </div>
+            <div class="insights-grid" id="insightsGrid"></div>
+          </section>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    const state = {
-      data: null,
-      charts: {},
-      txnSort: { field: "date", dir: -1 },
-      txnResults: null,
-      txnLoading: false,
-      txnFetchId: 0,
-    };
+    <script>
+      const state = {
+        data: null,
+        charts: {},
+        txnSort: { field: "date", dir: -1 },
+        txnResults: null,
+        txnLoading: false,
+        txnFetchId: 0,
+      };
 
-    let txnRenderTimer = null;
+      let txnRenderTimer = null;
 
-    const CHART_COLORS = {
-      navy: "#1B3A4B",
-      teal: "#2A6B6B",
-      slate: "#5C6B7A",
-      muted: "#8A9BAA",
-      green: "#2D6A4F",
-      categories: ["#1B3A4B", "#2A6B6B", "#3D5A6C", "#5C6B7A", "#7A8E9A", "#9AABB8", "#B8C5CE"],
-    };
+      const CHART_COLORS = {
+        navy: "#1B3A4B",
+        teal: "#2A6B6B",
+        slate: "#5C6B7A",
+        muted: "#8A9BAA",
+        green: "#2D6A4F",
+        categories: [
+          "#1B3A4B",
+          "#2A6B6B",
+          "#3D5A6C",
+          "#5C6B7A",
+          "#7A8E9A",
+          "#9AABB8",
+          "#B8C5CE",
+        ],
+      };
 
-    Chart.defaults.font.family = "'Inter', sans-serif";
-    Chart.defaults.color = "#666666";
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#666666";
 
-    function formatINR(value) {
-      const n = Math.abs(Number(value) || 0);
-      const formatted = new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(n);
-      return (Number(value) < 0 ? "-" : "") + formatted;
-    }
+      function formatINR(value) {
+        const n = Math.abs(Number(value) || 0);
+        const formatted = new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(n);
+        return (Number(value) < 0 ? "-" : "") + formatted;
+      }
 
-    function formatINRDetailed(value) {
-      const n = Math.abs(Number(value) || 0);
-      const formatted = new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 2,
-      }).format(n);
-      return (Number(value) < 0 ? "-" : "") + formatted;
-    }
+      function formatINRDetailed(value) {
+        const n = Math.abs(Number(value) || 0);
+        const formatted = new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+          maximumFractionDigits: 2,
+        }).format(n);
+        return (Number(value) < 0 ? "-" : "") + formatted;
+      }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
+      function escapeHtml(str) {
+        return String(str ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
 
-    function capitalize(str) {
-      return String(str ?? "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    }
+      function capitalize(str) {
+        return String(str ?? "")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+      }
 
-    function getGreeting() {
-      const h = new Date().getHours();
-      if (h < 12) return "Good morning";
-      if (h < 17) return "Good afternoon";
-      return "Good evening";
-    }
+      function getGreeting() {
+        const h = new Date().getHours();
+        if (h < 12) return "Good morning";
+        if (h < 17) return "Good afternoon";
+        return "Good evening";
+      }
 
-    function updateDateTime() {
-      const now = new Date();
-      document.getElementById("headerDate").textContent = now.toLocaleDateString("en-IN", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-      document.getElementById("heroGreeting").textContent = getGreeting();
-    }
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById("headerDate").textContent =
+          now.toLocaleDateString("en-IN", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          });
+        document.getElementById("heroGreeting").textContent = getGreeting();
+      }
 
-    function switchSection(id) {
-      document.querySelectorAll(".nav-item").forEach((el) => {
-        el.classList.toggle("active", el.dataset.section === id);
-      });
-      document.querySelectorAll(".section").forEach((el) => {
-        el.classList.toggle("active", el.id === `section-${id}`);
-      });
-      document.getElementById("sidebar").classList.remove("open");
-      document.getElementById("sidebarOverlay").classList.remove("open");
-      if (id === "ask" || id === "overview") {
+      function switchSection(id) {
+        document.querySelectorAll(".nav-item").forEach((el) => {
+          el.classList.toggle("active", el.dataset.section === id);
+        });
+        document.querySelectorAll(".section").forEach((el) => {
+          el.classList.toggle("active", el.id === `section-${id}`);
+        });
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("sidebarOverlay").classList.remove("open");
+        if (id === "ask" || id === "overview") {
+          updateDateTime();
+        }
+        if (id === "overview") {
+          setTimeout(() => resizeCharts(), 50);
+        }
+        if (id === "ask") {
+          document.getElementById("askInput")?.focus();
+        }
+      }
+
+      function resizeCharts() {
+        Object.values(state.charts).forEach((c) => c?.resize());
+      }
+
+      async function loadDashboard() {
+        const res = await fetch("/dashboard-data");
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        state.data = data;
+        renderAll();
+      }
+
+      function renderAll() {
+        const d = state.data;
+        if (!d) return;
+
+        renderMetrics(d);
+        renderCharts(d);
+        renderTopMerchants(d.top_merchants || []);
+        renderHoldings(d.holdings || []);
+        renderInsights(d);
+        populateCategoryFilter(d.categories || []);
+        renderTransactions();
+      }
+
+      function renderMetrics(d) {
+        const overview = d.overview || {};
+        const monthly = d.monthly || [];
+        const categories = d.categories || [];
+
         updateDateTime();
-      }
-      if (id === "overview") {
-        setTimeout(() => resizeCharts(), 50);
-      }
-      if (id === "ask") {
-        document.getElementById("askInput")?.focus();
-      }
-    }
+        document.getElementById("metricPortfolio").textContent = formatINR(
+          overview.total_current_value || 0,
+        );
 
-    function resizeCharts() {
-      Object.values(state.charts).forEach((c) => c?.resize());
-    }
+        const gains = overview.total_gains || 0;
+        const gainsEl = document.getElementById("metricPortfolioChange");
+        gainsEl.textContent = `${gains >= 0 ? "+" : ""}${formatINR(gains)} total gains`;
+        gainsEl.className = `metric-change ${gains >= 0 ? "positive" : "negative"}`;
 
-    async function loadDashboard() {
-      const res = await fetch("/dashboard-data");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      state.data = data;
-      renderAll();
-    }
+        const latestMonth = monthly[monthly.length - 1];
+        const prevMonth = monthly[monthly.length - 2];
+        const latestSpend = latestMonth?.total_spending || 0;
+        document.getElementById("metricSpend").textContent =
+          formatINR(latestSpend);
 
-    function renderAll() {
-      const d = state.data;
-      if (!d) return;
+        const spendChangeEl = document.getElementById("metricSpendChange");
+        if (prevMonth && prevMonth.total_spending > 0) {
+          const pct =
+            ((latestSpend - prevMonth.total_spending) /
+              prevMonth.total_spending) *
+            100;
+          spendChangeEl.textContent = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% vs last month`;
+          spendChangeEl.className = `metric-change ${pct <= 0 ? "positive" : "negative"}`;
+        } else {
+          spendChangeEl.textContent = latestMonth
+            ? formatMonthLabel(latestMonth.month)
+            : "No data";
+          spendChangeEl.className = "metric-change neutral";
+        }
 
-      renderMetrics(d);
-      renderCharts(d);
-      renderTopMerchants(d.top_merchants || []);
-      renderHoldings(d.holdings || []);
-      renderInsights(d);
-      populateCategoryFilter(d.categories || []);
-      renderTransactions();
-    }
+        const retPct = overview.overall_return_pct || 0;
+        document.getElementById("metricReturns").textContent =
+          `${retPct >= 0 ? "+" : ""}${retPct.toFixed(2)}%`;
+        const retEl = document.getElementById("metricReturnsChange");
+        retEl.textContent = `${formatINR(gains)} unrealized`;
+        retEl.className = `metric-change ${retPct >= 0 ? "positive" : "negative"}`;
 
-    function renderMetrics(d) {
-      const overview = d.overview || {};
-      const monthly = d.monthly || [];
-      const categories = d.categories || [];
-
-      updateDateTime();
-      document.getElementById("metricPortfolio").textContent = formatINR(overview.total_current_value || 0);
-
-      const gains = overview.total_gains || 0;
-      const gainsEl = document.getElementById("metricPortfolioChange");
-      gainsEl.textContent = `${gains >= 0 ? "+" : ""}${formatINR(gains)} total gains`;
-      gainsEl.className = `metric-change ${gains >= 0 ? "positive" : "negative"}`;
-
-      const latestMonth = monthly[monthly.length - 1];
-      const prevMonth = monthly[monthly.length - 2];
-      const latestSpend = latestMonth?.total_spending || 0;
-      document.getElementById("metricSpend").textContent = formatINR(latestSpend);
-
-      const spendChangeEl = document.getElementById("metricSpendChange");
-      if (prevMonth && prevMonth.total_spending > 0) {
-        const pct = ((latestSpend - prevMonth.total_spending) / prevMonth.total_spending) * 100;
-        spendChangeEl.textContent = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% vs last month`;
-        spendChangeEl.className = `metric-change ${pct <= 0 ? "positive" : "negative"}`;
-      } else {
-        spendChangeEl.textContent = latestMonth ? formatMonthLabel(latestMonth.month) : "No data";
-        spendChangeEl.className = "metric-change neutral";
+        const topCat = categories[0];
+        document.getElementById("metricTopCategory").textContent = topCat
+          ? capitalize(topCat.category)
+          : "—";
+        document.getElementById("metricTopCategoryAmt").textContent = topCat
+          ? formatINR(topCat.total_spending) + " spent"
+          : "—";
       }
 
-      const retPct = overview.overall_return_pct || 0;
-      document.getElementById("metricReturns").textContent = `${retPct >= 0 ? "+" : ""}${retPct.toFixed(2)}%`;
-      const retEl = document.getElementById("metricReturnsChange");
-      retEl.textContent = `${formatINR(gains)} unrealized`;
-      retEl.className = `metric-change ${retPct >= 0 ? "positive" : "negative"}`;
-
-      const topCat = categories[0];
-      document.getElementById("metricTopCategory").textContent = topCat ? capitalize(topCat.category) : "—";
-      document.getElementById("metricTopCategoryAmt").textContent = topCat
-        ? formatINR(topCat.total_spending) + " spent"
-        : "—";
-    }
-
-    function formatMonthLabel(ym) {
-      const [y, m] = ym.split("-");
-      const date = new Date(Number(y), Number(m) - 1);
-      return date.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
-    }
-
-    function destroyChart(id) {
-      if (state.charts[id]) {
-        state.charts[id].destroy();
-        delete state.charts[id];
+      function formatMonthLabel(ym) {
+        const [y, m] = ym.split("-");
+        const date = new Date(Number(y), Number(m) - 1);
+        return date.toLocaleDateString("en-IN", {
+          month: "short",
+          year: "numeric",
+        });
       }
-    }
 
-    function renderCharts(d) {
-      const monthly = d.monthly || [];
-      const categories = (d.categories || []).slice(0, 7);
-      const growth = d.portfolio_growth || [];
+      function destroyChart(id) {
+        if (state.charts[id]) {
+          state.charts[id].destroy();
+          delete state.charts[id];
+        }
+      }
 
-      destroyChart("spending");
-      destroyChart("categories");
-      destroyChart("portfolio");
+      function renderCharts(d) {
+        const monthly = d.monthly || [];
+        const categories = (d.categories || []).slice(0, 7);
+        const growth = d.portfolio_growth || [];
 
-      const spendingCtx = document.getElementById("chartSpending").getContext("2d");
-      state.charts.spending = new Chart(spendingCtx, {
-        type: "line",
-        data: {
-          labels: monthly.map((m) => formatMonthLabel(m.month)),
-          datasets: [{
-            data: monthly.map((m) => m.total_spending),
-            borderColor: CHART_COLORS.navy,
-            backgroundColor: "transparent",
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: CHART_COLORS.navy,
-            tension: 0.35,
-          }],
-        },
-        options: chartOptions(false),
-      });
+        destroyChart("spending");
+        destroyChart("categories");
+        destroyChart("portfolio");
 
-      const catCtx = document.getElementById("chartCategories").getContext("2d");
-      state.charts.categories = new Chart(catCtx, {
-        type: "doughnut",
-        data: {
-          labels: categories.map((c) => capitalize(c.category)),
-          datasets: [{
-            data: categories.map((c) => c.total_spending),
-            backgroundColor: CHART_COLORS.categories,
-            borderWidth: 0,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: "65%",
-          plugins: {
-            legend: { position: "right", labels: { boxWidth: 10, padding: 12, font: { size: 11 } } },
+        const spendingCtx = document
+          .getElementById("chartSpending")
+          .getContext("2d");
+        state.charts.spending = new Chart(spendingCtx, {
+          type: "line",
+          data: {
+            labels: monthly.map((m) => formatMonthLabel(m.month)),
+            datasets: [
+              {
+                data: monthly.map((m) => m.total_spending),
+                borderColor: CHART_COLORS.navy,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: CHART_COLORS.navy,
+                tension: 0.35,
+              },
+            ],
           },
-        },
-      });
+          options: chartOptions(false),
+        });
 
-      const portfolioCtx = document.getElementById("chartPortfolio").getContext("2d");
-      const growthLabels = growth.map((g) => {
-        const dt = new Date(g.date);
-        return dt.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
-      });
-      state.charts.portfolio = new Chart(portfolioCtx, {
-        type: "line",
-        data: {
-          labels: growthLabels,
-          datasets: [{
-            data: growth.map((g) => g.value),
-            borderColor: CHART_COLORS.teal,
-            backgroundColor: "rgba(42, 107, 107, 0.08)",
-            borderWidth: 2,
-            fill: true,
-            pointRadius: 0,
-            tension: 0.35,
-          }],
-        },
-        options: chartOptions(true),
-      });
-    }
-
-    function chartOptions(isCurrency) {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: { font: { size: 11 }, maxTicksLimit: 6 },
+        const catCtx = document
+          .getElementById("chartCategories")
+          .getContext("2d");
+        state.charts.categories = new Chart(catCtx, {
+          type: "doughnut",
+          data: {
+            labels: categories.map((c) => capitalize(c.category)),
+            datasets: [
+              {
+                data: categories.map((c) => c.total_spending),
+                backgroundColor: CHART_COLORS.categories,
+                borderWidth: 0,
+              },
+            ],
           },
-          y: {
-            grid: { color: "#F0F0EC" },
-            border: { display: false },
-            ticks: {
-              font: { size: 11 },
-              callback: isCurrency
-                ? (v) => "₹" + (v >= 100000 ? (v / 100000).toFixed(1) + "L" : v >= 1000 ? (v / 1000).toFixed(0) + "K" : v)
-                : undefined,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: {
+              legend: {
+                position: "right",
+                labels: { boxWidth: 10, padding: 12, font: { size: 11 } },
+              },
             },
           },
-        },
-      };
-    }
+        });
 
-    function renderTopMerchants(merchants) {
-      const el = document.getElementById("topMerchantsList");
-      if (!merchants.length) {
-        el.innerHTML = '<div class="empty-state">No merchant data</div>';
-        return;
+        const portfolioCtx = document
+          .getElementById("chartPortfolio")
+          .getContext("2d");
+        const growthLabels = growth.map((g) => {
+          const dt = new Date(g.date);
+          return dt.toLocaleDateString("en-IN", {
+            month: "short",
+            year: "2-digit",
+          });
+        });
+        state.charts.portfolio = new Chart(portfolioCtx, {
+          type: "line",
+          data: {
+            labels: growthLabels,
+            datasets: [
+              {
+                data: growth.map((g) => g.value),
+                borderColor: CHART_COLORS.teal,
+                backgroundColor: "rgba(42, 107, 107, 0.08)",
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.35,
+              },
+            ],
+          },
+          options: chartOptions(true),
+        });
       }
-      el.innerHTML = merchants.map((m, i) => `
+
+      function chartOptions(isCurrency) {
+        return {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              grid: { display: false },
+              border: { display: false },
+              ticks: { font: { size: 11 }, maxTicksLimit: 6 },
+            },
+            y: {
+              grid: { color: "#F0F0EC" },
+              border: { display: false },
+              ticks: {
+                font: { size: 11 },
+                callback: isCurrency
+                  ? (v) =>
+                      "₹" +
+                      (v >= 100000
+                        ? (v / 100000).toFixed(1) + "L"
+                        : v >= 1000
+                          ? (v / 1000).toFixed(0) + "K"
+                          : v)
+                  : undefined,
+              },
+            },
+          },
+        };
+      }
+
+      function renderTopMerchants(merchants) {
+        const el = document.getElementById("topMerchantsList");
+        if (!merchants.length) {
+          el.innerHTML = '<div class="empty-state">No merchant data</div>';
+          return;
+        }
+        el.innerHTML = merchants
+          .map(
+            (m, i) => `
         <div class="merchant-row">
           <div class="merchant-info">
             <span class="merchant-rank">${i + 1}</span>
@@ -1184,18 +1504,22 @@
           </div>
           <span class="merchant-amount">${formatINR(m.total_spending)}</span>
         </div>
-      `).join("");
-    }
-
-    function renderHoldings(holdings) {
-      const tbody = document.getElementById("holdingsTableBody");
-      if (!holdings.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No holdings found</td></tr>';
-        return;
+      `,
+          )
+          .join("");
       }
-      tbody.innerHTML = holdings.map((h) => {
-        const up = h.gains >= 0;
-        return `
+
+      function renderHoldings(holdings) {
+        const tbody = document.getElementById("holdingsTableBody");
+        if (!holdings.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="7" class="empty-state">No holdings found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = holdings
+          .map((h) => {
+            const up = h.gains >= 0;
+            return `
           <tr>
             <td><strong>${escapeHtml(h.fund_name)}</strong></td>
             <td>${h.units.toFixed(2)}</td>
@@ -1206,121 +1530,146 @@
             <td class="amount-cell" style="text-align:right;"><span class="perf-badge ${up ? "up" : "down"}">${up ? "+" : ""}${h.return_pct.toFixed(2)}%</span></td>
           </tr>
         `;
-      }).join("");
-    }
-
-    function renderInsights(d) {
-      const grid = document.getElementById("insightsGrid");
-      const insights = d.insights || [];
-      if (!insights.length) {
-        grid.innerHTML = '<div class="empty-state">Insights will appear once your data is loaded.</div>';
-        return;
+          })
+          .join("");
       }
-      grid.innerHTML = insights.map((text) => `
+
+      function renderInsights(d) {
+        const grid = document.getElementById("insightsGrid");
+        const insights = d.insights || [];
+        if (!insights.length) {
+          grid.innerHTML =
+            '<div class="empty-state">Insights will appear once your data is loaded.</div>';
+          return;
+        }
+        grid.innerHTML = insights
+          .map(
+            (text) => `
         <div class="insight-card">
           <div class="insight-icon"></div>
           <p class="insight-text">${escapeHtml(text)}</p>
         </div>
-      `).join("");
-    }
+      `,
+          )
+          .join("");
+      }
 
-    function populateCategoryFilter(categories) {
-      const sel = document.getElementById("txnCategory");
-      const current = sel.value;
-      sel.innerHTML = '<option value="">All categories</option>' +
-        categories.map((c) => `<option value="${escapeHtml(c.category)}">${escapeHtml(capitalize(c.category))}</option>`).join("");
-      sel.value = current;
-    }
+      function populateCategoryFilter(categories) {
+        const sel = document.getElementById("txnCategory");
+        const current = sel.value;
+        sel.innerHTML =
+          '<option value="">All categories</option>' +
+          categories
+            .map(
+              (c) =>
+                `<option value="${escapeHtml(c.category)}">${escapeHtml(capitalize(c.category))}</option>`,
+            )
+            .join("");
+        sel.value = current;
+      }
 
-    function hasTxnFilters() {
-      return !!(
-        document.getElementById("txnSearch").value.trim() ||
-        document.getElementById("txnCategory").value ||
-        document.getElementById("txnDateFrom").value ||
-        document.getElementById("txnDateTo").value
-      );
-    }
+      function hasTxnFilters() {
+        return !!(
+          document.getElementById("txnSearch").value.trim() ||
+          document.getElementById("txnCategory").value ||
+          document.getElementById("txnDateFrom").value ||
+          document.getElementById("txnDateTo").value
+        );
+      }
 
-    function getTxnFilterParams() {
-      const params = new URLSearchParams();
-      const search = document.getElementById("txnSearch").value.trim();
-      const category = document.getElementById("txnCategory").value;
-      const from = document.getElementById("txnDateFrom").value;
-      const to = document.getElementById("txnDateTo").value;
-      if (search) params.set("search", search);
-      if (category) params.set("category", category);
-      if (from) params.set("dateFrom", from);
-      if (to) params.set("dateTo", to);
-      return params;
-    }
+      function getTxnFilterParams() {
+        const params = new URLSearchParams();
+        const search = document.getElementById("txnSearch").value.trim();
+        const category = document.getElementById("txnCategory").value;
+        const from = document.getElementById("txnDateFrom").value;
+        const to = document.getElementById("txnDateTo").value;
+        if (search) params.set("search", search);
+        if (category) params.set("category", category);
+        if (from) params.set("dateFrom", from);
+        if (to) params.set("dateTo", to);
+        return params;
+      }
 
-    async function fetchTransactions() {
-      const fetchId = ++state.txnFetchId;
-      state.txnLoading = true;
-      const tbody = document.getElementById("txnTableBody");
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Loading transactions...</td></tr>';
+      async function fetchTransactions() {
+        const fetchId = ++state.txnFetchId;
+        state.txnLoading = true;
+        const tbody = document.getElementById("txnTableBody");
+        tbody.innerHTML =
+          '<tr><td colspan="4" class="empty-state">Loading transactions...</td></tr>';
 
-      try {
-        const params = getTxnFilterParams();
-        const res = await fetch(`/transactions?${params.toString()}`);
-        const data = await res.json();
-        if (fetchId !== state.txnFetchId) return;
-        if (data.error) throw new Error(data.error);
-        state.txnResults = data.transactions || [];
-      } catch (err) {
-        if (fetchId !== state.txnFetchId) return;
-        state.txnResults = [];
-        console.error(err);
-      } finally {
-        if (fetchId === state.txnFetchId) {
-          state.txnLoading = false;
-          paintTransactions();
+        try {
+          const params = getTxnFilterParams();
+          const res = await fetch(`/transactions?${params.toString()}`);
+          const data = await res.json();
+          if (fetchId !== state.txnFetchId) return;
+          if (data.error) throw new Error(data.error);
+          state.txnResults = data.transactions || [];
+        } catch (err) {
+          if (fetchId !== state.txnFetchId) return;
+          state.txnResults = [];
+          console.error(err);
+        } finally {
+          if (fetchId === state.txnFetchId) {
+            state.txnLoading = false;
+            paintTransactions();
+          }
         }
       }
-    }
 
-    function sortTransactions(rows) {
-      const { field, dir } = state.txnSort;
-      return [...rows].sort((a, b) => {
-        let av = a[field], bv = b[field];
-        if (field === "date") { av = new Date(av); bv = new Date(bv); }
-        if (field === "amount") { av = Number(av); bv = Number(bv); }
-        if (field === "merchant") {
-          av = (a.merchant || a.raw_merchant || "").toLowerCase();
-          bv = (b.merchant || b.raw_merchant || "").toLowerCase();
+      function sortTransactions(rows) {
+        const { field, dir } = state.txnSort;
+        return [...rows].sort((a, b) => {
+          let av = a[field],
+            bv = b[field];
+          if (field === "date") {
+            av = new Date(av);
+            bv = new Date(bv);
+          }
+          if (field === "amount") {
+            av = Number(av);
+            bv = Number(bv);
+          }
+          if (field === "merchant") {
+            av = (a.merchant || a.raw_merchant || "").toLowerCase();
+            bv = (b.merchant || b.raw_merchant || "").toLowerCase();
+          }
+          if (av < bv) return -1 * dir;
+          if (av > bv) return 1 * dir;
+          return 0;
+        });
+      }
+
+      function paintTransactions() {
+        const filtered = hasTxnFilters();
+        const rows = sortTransactions(
+          filtered ? state.txnResults || [] : state.data?.transactions || [],
+        );
+
+        const desc = document.getElementById("txnSectionDesc");
+        if (filtered) {
+          desc.textContent = rows.length
+            ? `Showing ${rows.length} matching transaction${rows.length === 1 ? "" : "s"}.`
+            : "No transactions match your search.";
+        } else {
+          desc.textContent = "Your 10 most recent transactions.";
         }
-        if (av < bv) return -1 * dir;
-        if (av > bv) return 1 * dir;
-        return 0;
-      });
-    }
 
-    function paintTransactions() {
-      const filtered = hasTxnFilters();
-      const rows = sortTransactions(
-        filtered ? (state.txnResults || []) : (state.data?.transactions || [])
-      );
+        const tbody = document.getElementById("txnTableBody");
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="4" class="empty-state">${filtered ? "No transactions match your filters" : "No transactions yet"}</td></tr>`;
+          return;
+        }
 
-      const desc = document.getElementById("txnSectionDesc");
-      if (filtered) {
-        desc.textContent = rows.length
-          ? `Showing ${rows.length} matching transaction${rows.length === 1 ? "" : "s"}.`
-          : "No transactions match your search.";
-      } else {
-        desc.textContent = "Your 10 most recent transactions.";
-      }
-
-      const tbody = document.getElementById("txnTableBody");
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">${filtered ? "No transactions match your filters" : "No transactions yet"}</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = rows.map((t) => {
-        const dateStr = new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-        const merchant = t.merchant || t.raw_merchant || "";
-        const isRefund = t.amount < 0;
-        return `
+        tbody.innerHTML = rows
+          .map((t) => {
+            const dateStr = new Date(t.date).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+            const merchant = t.merchant || t.raw_merchant || "";
+            const isRefund = t.amount < 0;
+            return `
           <tr>
             <td style="color:var(--text-secondary);white-space:nowrap;">${dateStr}</td>
             <td><strong>${escapeHtml(merchant)}</strong></td>
@@ -1328,143 +1677,167 @@
             <td class="amount-cell ${isRefund ? "negative" : ""}" style="text-align:right;">${formatINRDetailed(t.amount)}</td>
           </tr>
         `;
-      }).join("");
-    }
-
-    function renderTransactions() {
-      if (hasTxnFilters()) {
-        fetchTransactions();
-        return;
+          })
+          .join("");
       }
-      state.txnResults = null;
-      paintTransactions();
-    }
 
-    function scheduleTransactionRender() {
-      clearTimeout(txnRenderTimer);
-      txnRenderTimer = setTimeout(() => renderTransactions(), 300);
-    }
+      function renderTransactions() {
+        if (hasTxnFilters()) {
+          fetchTransactions();
+          return;
+        }
+        state.txnResults = null;
+        paintTransactions();
+      }
 
-    function renderAnswerBlock(label, content, extraClass = "") {
-      return `
+      function scheduleTransactionRender() {
+        clearTimeout(txnRenderTimer);
+        txnRenderTimer = setTimeout(() => renderTransactions(), 300);
+      }
+
+      function renderAnswerBlock(label, content, extraClass = "") {
+        return `
         <div class="answer-block">
           <div class="answer-block-label">${label}</div>
           <div class="answer-block-content ${extraClass}">${content}</div>
         </div>
       `;
-    }
+      }
 
-    async function askTara(question) {
-      const stack = document.getElementById("answerStack");
-      const btn = document.getElementById("askSubmitBtn");
-      btn.disabled = true;
-
-      stack.innerHTML = renderAnswerBlock("Question", escapeHtml(question)) +
-        `<div class="answer-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Tara is analyzing your finances...</div>`;
-
-      try {
-        const res = await fetch("/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
-        });
-        const data = await res.json();
-
-        if (res.status === 429 || data.retryable) {
-          stack.innerHTML = renderAnswerBlock("Question", escapeHtml(question)) +
-            renderAnswerBlock("Answer", "Tara is temporarily busy. Please wait a moment and try again.");
-          return;
-        }
-
-        if (data.error) {
-          stack.innerHTML = renderAnswerBlock("Question", escapeHtml(question)) +
-            renderAnswerBlock("Answer", escapeHtml(data.error));
-          return;
-        }
-
-        const answer = data.answer || "No response received.";
+      async function askTara(question) {
+        const stack = document.getElementById("answerStack");
+        const btn = document.getElementById("askSubmitBtn");
+        btn.disabled = true;
 
         stack.innerHTML =
-          renderAnswerBlock("Question", escapeHtml(data.question || question)) +
-          renderAnswerBlock("Answer", escapeHtml(answer), "answer-main");
-      } catch {
-        stack.innerHTML = renderAnswerBlock("Question", escapeHtml(question)) +
-          renderAnswerBlock("Answer", "Unable to reach Tara. Please check your connection and try again.");
-      } finally {
-        btn.disabled = false;
+          renderAnswerBlock("Question", escapeHtml(question)) +
+          `<div class="answer-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Tara is analyzing your finances...</div>`;
+
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question }),
+          });
+          const data = await res.json();
+
+          if (res.status === 429 || data.retryable) {
+            stack.innerHTML =
+              renderAnswerBlock("Question", escapeHtml(question)) +
+              renderAnswerBlock(
+                "Answer",
+                "Tara is temporarily busy. Please wait a moment and try again.",
+              );
+            return;
+          }
+
+          if (data.error) {
+            stack.innerHTML =
+              renderAnswerBlock("Question", escapeHtml(question)) +
+              renderAnswerBlock("Answer", escapeHtml(data.error));
+            return;
+          }
+
+          const answer = data.answer || "No response received.";
+
+          stack.innerHTML =
+            renderAnswerBlock(
+              "Question",
+              escapeHtml(data.question || question),
+            ) + renderAnswerBlock("Answer", escapeHtml(answer), "answer-main");
+        } catch {
+          stack.innerHTML =
+            renderAnswerBlock("Question", escapeHtml(question)) +
+            renderAnswerBlock(
+              "Answer",
+              "Unable to reach Tara. Please check your connection and try again.",
+            );
+        } finally {
+          btn.disabled = false;
+        }
       }
-    }
 
-    function submitAsk() {
-      const input = document.getElementById("askInput");
-      const q = input.value.trim();
-      if (!q) return;
-      input.value = "";
-      askTara(q);
-    }
-
-    // Event listeners
-    document.querySelectorAll(".nav-item").forEach((btn) => {
-      btn.addEventListener("click", () => switchSection(btn.dataset.section));
-    });
-
-    document.getElementById("brandHome").addEventListener("click", () => switchSection("ask"));
-
-    document.getElementById("mobileMenuBtn").addEventListener("click", () => {
-      document.getElementById("sidebar").classList.add("open");
-      document.getElementById("sidebarOverlay").classList.add("open");
-    });
-
-    document.getElementById("sidebarOverlay").addEventListener("click", () => {
-      document.getElementById("sidebar").classList.remove("open");
-      document.getElementById("sidebarOverlay").classList.remove("open");
-    });
-
-    document.getElementById("askSubmitBtn").addEventListener("click", submitAsk);
-    document.getElementById("askInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAsk(); }
-    });
-
-    document.getElementById("askChips").addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip");
-      if (!chip) return;
-      document.getElementById("askInput").value = chip.dataset.q;
-      submitAsk();
-    });
-
-    ["txnSearch", "txnCategory", "txnDateFrom", "txnDateTo"].forEach((id) => {
-      const el = document.getElementById(id);
-      el.addEventListener("input", scheduleTransactionRender);
-      el.addEventListener("change", scheduleTransactionRender);
-    });
-
-    document.querySelector("#section-transactions thead").addEventListener("click", (e) => {
-      const th = e.target.closest("th[data-sort]");
-      if (!th) return;
-      const field = th.dataset.sort;
-      if (state.txnSort.field === field) {
-        state.txnSort.dir *= -1;
-      } else {
-        state.txnSort.field = field;
-        state.txnSort.dir = field === "amount" ? -1 : 1;
+      function submitAsk() {
+        const input = document.getElementById("askInput");
+        const q = input.value.trim();
+        if (!q) return;
+        input.value = "";
+        askTara(q);
       }
-      renderTransactions();
-    });
 
-    updateDateTime();
-    setInterval(updateDateTime, 60_000);
+      // Event listeners
+      document.querySelectorAll(".nav-item").forEach((btn) => {
+        btn.addEventListener("click", () => switchSection(btn.dataset.section));
+      });
 
-    window.addEventListener("resize", resizeCharts);
+      document
+        .getElementById("brandHome")
+        .addEventListener("click", () => switchSection("ask"));
 
-    (async () => {
-      try {
-        await loadDashboard();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        document.getElementById("pageLoader").classList.add("hidden");
-      }
-    })();
-  </script>
-</body>
+      document.getElementById("mobileMenuBtn").addEventListener("click", () => {
+        document.getElementById("sidebar").classList.add("open");
+        document.getElementById("sidebarOverlay").classList.add("open");
+      });
+
+      document
+        .getElementById("sidebarOverlay")
+        .addEventListener("click", () => {
+          document.getElementById("sidebar").classList.remove("open");
+          document.getElementById("sidebarOverlay").classList.remove("open");
+        });
+
+      document
+        .getElementById("askSubmitBtn")
+        .addEventListener("click", submitAsk);
+      document.getElementById("askInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          submitAsk();
+        }
+      });
+
+      document.getElementById("askChips").addEventListener("click", (e) => {
+        const chip = e.target.closest(".chip");
+        if (!chip) return;
+        document.getElementById("askInput").value = chip.dataset.q;
+        submitAsk();
+      });
+
+      ["txnSearch", "txnCategory", "txnDateFrom", "txnDateTo"].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener("input", scheduleTransactionRender);
+        el.addEventListener("change", scheduleTransactionRender);
+      });
+
+      document
+        .querySelector("#section-transactions thead")
+        .addEventListener("click", (e) => {
+          const th = e.target.closest("th[data-sort]");
+          if (!th) return;
+          const field = th.dataset.sort;
+          if (state.txnSort.field === field) {
+            state.txnSort.dir *= -1;
+          } else {
+            state.txnSort.field = field;
+            state.txnSort.dir = field === "amount" ? -1 : 1;
+          }
+          renderTransactions();
+        });
+
+      updateDateTime();
+      setInterval(updateDateTime, 60_000);
+
+      window.addEventListener("resize", resizeCharts);
+
+      (async () => {
+        try {
+          await loadDashboard();
+        } catch (err) {
+          console.error(err);
+        } finally {
+          document.getElementById("pageLoader").classList.add("hidden");
+        }
+      })();
+    </script>
+  </body>
 </html>
