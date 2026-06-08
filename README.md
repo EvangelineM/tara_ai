@@ -14,13 +14,13 @@ Full-stack personal finance dashboard with an AI assistant. Tara aggregates port
 
 <table>
 	<tr>
-		<td align="center"><strong>Overview</strong><br><img src="assets/ask_tara.png" width="420" alt="Overview screenshot"></td>
-		<td align="center"><strong>Dashboard</strong><br><img src="assets/overview.png" width="420" alt="Dashboard screenshot"></td>
+		<td align="center"><strong>Ask Tara</strong><br><img src="assets/ask_tara.png" width="420" alt="Ask Tara"></td>
+		<td align="center"><strong>Overview</strong><br><img src="assets/overview.png" width="420" alt="Overview"></td>
 	</tr>
 	<tr>
-		<td align="center"><strong>Transactions</strong><br><img src="assets/transactions.png" width="420" alt="Transactions screenshot"></td>
-		<td align="center"><strong>Ask Tara</strong><br><img src="assets/investments.png" width="420" alt="Ask Tara screenshot"></td>
-        <td align="center"><strong>Ask Tara</strong><br><img src="assets/insights.png" width="420" alt="Ask Tara screenshot"></td>
+		<td align="center"><strong>Transactions</strong><br><img src="assets/transactions.png" width="420" alt="Transactions"></td>
+		<td align="center"><strong>Investments</strong><br><img src="assets/investments.png" width="420" alt="Investments"></td>
+        <td align="center"><strong>Insights</strong><br><img src="assets/insights.png" width="420" alt="Insights"></td>
 	</tr>
 </table>
 
@@ -82,14 +82,4 @@ Open `http://localhost:4111` for the dashboard and Mastra Studio.
 - `src/lib/` — finance queries, ask service, insights builder, normalization
 - `src/db/` — database connection
 
-## Scripts
 
-- `npm run dev` — start dev server
-- `npm run build` — production build
-- `npm run start` — run production server
-
-## License
-
-ISC
-
----
