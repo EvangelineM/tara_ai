@@ -1169,7 +1169,10 @@
       </div>
     </div>
 
-    <script>
+    <script type="module">
+      const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) 
+        || "https://tara-ai-92tw.onrender.com";
+
       const state = {
         data: null,
         charts: {},
@@ -1280,7 +1283,7 @@
       }
 
       async function loadDashboard(skipTxns = false) {
-        const res = await fetch("/dashboard-data");
+        const res = await fetch(`${API_URL}/dashboard-data`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         state.data = data;
@@ -1601,7 +1604,7 @@
 
         try {
           const params = getTxnFilterParams();
-          const res = await fetch(`/transactions?${params.toString()}`);
+          const res = await fetch(`${API_URL}/transactions?${params.toString()}`);
           const data = await res.json();
           if (fetchId !== state.txnFetchId) return;
           if (data.error) throw new Error(data.error);
@@ -1719,7 +1722,7 @@
           `<div class="answer-loading"><div class="loading-dots"><span></span><span></span><span></span></div> Tara is analyzing your finances...</div>`;
 
         try {
-          const res = await fetch("/ask", {
+          const res = await fetch(`${API_URL}/ask`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question }),

@@ -196,24 +196,46 @@ export async function ingestData(dir?: string) {
     console.log("Applied alias discovery to unify canonical merchant names.");
 
     console.log("Inserting merchant mappings...");
-    for (const map of mappings) {
-      await client.query(
-        `INSERT INTO merchant_mappings (raw_merchant, normalized_merchant, category)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (raw_merchant) DO UPDATE
-         SET normalized_merchant = EXCLUDED.normalized_merchant, category = EXCLUDED.category`,
-        [map.raw_merchant, map.normalized_merchant, map.category]
-      );
+    if (mappings.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < mappings.length; i += batchSize) {
+        const batch = mappings.slice(i, i + batchSize);
+        const values: any[] = [];
+        const placeholders: string[] = [];
+        batch.forEach((map, idx) => {
+          const base = idx * 3;
+          placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3})`);
+          values.push(map.raw_merchant, map.normalized_merchant, map.category);
+        });
+        await client.query(
+          `INSERT INTO merchant_mappings (raw_merchant, normalized_merchant, category)
+           VALUES ${placeholders.join(", ")}
+           ON CONFLICT (raw_merchant) DO UPDATE
+           SET normalized_merchant = EXCLUDED.normalized_merchant, category = EXCLUDED.category`,
+          values
+        );
+      }
     }
 
     console.log("Inserting transactions...");
-    for (const tx of transactions) {
-      await client.query(
-        `INSERT INTO transactions (id, date, merchant, category, amount, currency, memo)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO NOTHING`,
-        [tx.id, tx.date, tx.merchant, tx.category, tx.amount, tx.currency, tx.memo]
-      );
+    if (transactions.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < transactions.length; i += batchSize) {
+        const batch = transactions.slice(i, i + batchSize);
+        const values: any[] = [];
+        const placeholders: string[] = [];
+        batch.forEach((tx, idx) => {
+          const base = idx * 7;
+          placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`);
+          values.push(tx.id, tx.date, tx.merchant, tx.category, tx.amount, tx.currency, tx.memo);
+        });
+        await client.query(
+          `INSERT INTO transactions (id, date, merchant, category, amount, currency, memo)
+           VALUES ${placeholders.join(", ")}
+           ON CONFLICT (id) DO NOTHING`,
+          values
+        );
+      }
     }
 
     console.log("Inserting funds and NAVs...");
@@ -226,26 +248,47 @@ export async function ingestData(dir?: string) {
         [fund.id, fund.name, fund.category]
       );
 
-      if (Array.isArray(fund.nav)) {
-        for (const navRow of fund.nav) {
+      if (Array.isArray(fund.nav) && fund.nav.length > 0) {
+        const navRows = fund.nav;
+        const batchSize = 100;
+        for (let i = 0; i < navRows.length; i += batchSize) {
+          const batch = navRows.slice(i, i + batchSize);
+          const values: any[] = [];
+          const placeholders: string[] = [];
+          batch.forEach((navRow, idx) => {
+            const base = idx * 3;
+            placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3})`);
+            values.push(fund.id, navRow.date, navRow.value);
+          });
           await client.query(
             `INSERT INTO fund_nav (fund_id, nav_date, nav)
-             VALUES ($1, $2, $3)
+             VALUES ${placeholders.join(", ")}
              ON CONFLICT (fund_id, nav_date) DO UPDATE
              SET nav = EXCLUDED.nav`,
-            [fund.id, navRow.date, navRow.value]
+            values
           );
         }
       }
     }
 
     console.log("Inserting holdings...");
-    for (const holding of holdings) {
-      await client.query(
-        `INSERT INTO holdings (fund_id, fund_name, units, purchase_date, purchase_nav)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [holding.fund_id, holding.fund_name, holding.units, holding.purchase_date, holding.purchase_nav]
-      );
+    if (holdings.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < holdings.length; i += batchSize) {
+        const batch = holdings.slice(i, i + batchSize);
+        const values: any[] = [];
+        const placeholders: string[] = [];
+        batch.forEach((holding, idx) => {
+          const base = idx * 5;
+          placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`);
+          values.push(holding.fund_id, holding.fund_name, holding.units, holding.purchase_date, holding.purchase_nav);
+        });
+        await client.query(
+          `INSERT INTO holdings (fund_id, fund_name, units, purchase_date, purchase_nav)
+           VALUES ${placeholders.join(", ")}`,
+          values
+        );
+      }
     }
 
     console.log("✅ Ingestion successfully completed!");
