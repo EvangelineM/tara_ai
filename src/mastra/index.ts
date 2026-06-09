@@ -127,7 +127,7 @@ export const mastra = new Mastra({
                 filterCategory: category,
                 dateFrom,
                 dateTo,
-                limit: hasFilters ? 0 : 10,
+                limit: 0,
               },
               toolCtx
             )) as { transactions?: unknown[] };
@@ -173,7 +173,7 @@ export const mastra = new Mastra({
             // Execute transactions metrics
             const txnsRes = (await transactionTool.execute!({
               action: "list_transactions",
-              limit: 10,
+              limit: 0,
             }, toolCtx)) as any;
 
             const categoriesRes = (await transactionTool.execute!({
@@ -186,7 +186,7 @@ export const mastra = new Mastra({
 
             const merchantsRes = (await transactionTool.execute!({
               action: "top_merchants",
-              limit: 8,
+              limit: 100,
             }, toolCtx)) as any;
 
             const bestFundRes = (await fundTool.execute!({
@@ -199,7 +199,7 @@ export const mastra = new Mastra({
               const growthRes = await growthClient.query(`
                 SELECT fn.nav_date::text as date, SUM(h.units * fn.nav)::numeric as value
                 FROM holdings h
-                JOIN fund_nav fn ON h.fund_id = fn.fund_id
+                JOIN fund_nav fn ON h.fund_id = fn.fund_id AND fn.nav_date >= h.purchase_date
                 GROUP BY fn.nav_date
                 ORDER BY fn.nav_date ASC
               `);
@@ -400,9 +400,8 @@ async function autoSeedIfEmpty() {
     try {
       const res = await client.query("SELECT COUNT(*) FROM transactions");
       const count = parseInt(res.rows[0].count, 10);
-      if (count === 0) {
-        const defaultDataset = path.basename(resolveDataDir());
-        console.log(`Database is empty. Running auto-ingestion with ${defaultDataset}...`);
+      if (count < 4500) {
+        console.log(`Database transaction count (${count}) is less than expected combined dataset size (4500). Running combined ingestion...`);
         await ingestData();
       } else {
         console.log(`Database already has ${count} transactions.`);

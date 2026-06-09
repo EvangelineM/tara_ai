@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { pool } from "../src/db/connection";
-import { getProjectRoot, resolveDataDir } from "../src/lib/paths";
+import { getProjectRoot, resolveDataDir, listAvailableDatasets } from "../src/lib/paths";
 import {
   buildNormalizationPrompt,
   collectCategoryVocabulary,
@@ -76,10 +76,12 @@ function ensureCompleteMappings(
 }
 
 export async function ingestData(dir?: string) {
-  const dataDir = resolveDataDir(dir);
+  const projectRoot = getProjectRoot();
+  const datasets = listAvailableDatasets();
   const client = await pool.connect();
+  
   try {
-    console.log(`Starting ingestion from: ${dataDir}`);
+    console.log(`Starting combined ingestion for all datasets: ${datasets.join(", ")}`);
 
     await client.query(`
       DROP TABLE IF EXISTS holdings CASCADE;
@@ -116,7 +118,8 @@ export async function ingestData(dir?: string) {
         fund_name TEXT,
         units NUMERIC,
         purchase_date DATE,
-        purchase_nav NUMERIC
+        purchase_nav NUMERIC,
+        dataset TEXT
       );
 
       CREATE TABLE merchant_mappings (
@@ -126,28 +129,47 @@ export async function ingestData(dir?: string) {
       );
     `);
 
-    await client.query("TRUNCATE TABLE transactions, funds, fund_nav, holdings, merchant_mappings CASCADE");
-    console.log("Database tables truncated successfully.");
+    let allTransactions: any[] = [];
+    let allFunds: any[] = [];
+    let allHoldings: any[] = [];
+    
+    for (const dataset of datasets) {
+      const dataDir = path.join(projectRoot, "data", dataset);
+      const transactionsPath = path.join(dataDir, "transactions.json");
+      const fundsPath = path.join(dataDir, "funds.json");
+      const holdingsPath = path.join(dataDir, "holdings.json");
 
-    const transactionsPath = path.join(dataDir, "transactions.json");
-    const fundsPath = path.join(dataDir, "funds.json");
-    const holdingsPath = path.join(dataDir, "holdings.json");
+      if (!fs.existsSync(transactionsPath) || !fs.existsSync(fundsPath) || !fs.existsSync(holdingsPath)) {
+        console.warn(`Skipping incomplete dataset: ${dataset}`);
+        continue;
+      }
 
-    if (!fs.existsSync(transactionsPath) || !fs.existsSync(fundsPath) || !fs.existsSync(holdingsPath)) {
-      throw new Error(`Data files missing in directory: ${dataDir}`);
+      const transactions = JSON.parse(fs.readFileSync(transactionsPath, "utf-8"));
+      const funds = JSON.parse(fs.readFileSync(fundsPath, "utf-8"));
+      const holdings = JSON.parse(fs.readFileSync(holdingsPath, "utf-8"));
+
+      const prefixedTransactions = transactions.map((tx: any) => ({
+        ...tx,
+        id: `${dataset}_${tx.id}`
+      }));
+
+      const prefixedHoldings = holdings.map((h: any) => ({
+        ...h,
+        dataset
+      }));
+
+      allTransactions.push(...prefixedTransactions);
+      allFunds.push(...funds);
+      allHoldings.push(...prefixedHoldings);
     }
 
-    const transactions = JSON.parse(fs.readFileSync(transactionsPath, "utf-8"));
-    const funds = JSON.parse(fs.readFileSync(fundsPath, "utf-8"));
-    const holdings = JSON.parse(fs.readFileSync(holdingsPath, "utf-8"));
+    console.log(`Loaded from files: ${allTransactions.length} total txns, ${allFunds.length} total funds, ${allHoldings.length} total holdings.`);
 
-    console.log(`Loaded from files: ${transactions.length} txns, ${funds.length} funds, ${holdings.length} holdings.`);
-
-    const categoryVocabulary = collectCategoryVocabulary(transactions);
+    const categoryVocabulary = collectCategoryVocabulary(allTransactions);
     console.log(`Discovered category vocabulary: ${categoryVocabulary.join(", ") || "none"}`);
 
     const merchantMap = new Map<string, { categories: Set<string>; memos: Set<string> }>();
-    for (const tx of transactions) {
+    for (const tx of allTransactions) {
       if (!merchantMap.has(tx.merchant)) {
         merchantMap.set(tx.merchant, { categories: new Set(), memos: new Set() });
       }
@@ -179,11 +201,9 @@ export async function ingestData(dir?: string) {
       } catch (err) {
         console.warn("LLM normalization failed, using heuristic fallback:", (err as Error).message);
         mappings = normalizeMerchantsFallback(uniqueMerchantsList, categoryVocabulary);
-        console.log(`Completed heuristic normalization for ${mappings.length} merchants.`);
       }
     } else {
       mappings = normalizeMerchantsFallback(uniqueMerchantsList, categoryVocabulary);
-      console.log(`Completed heuristic normalization for ${mappings.length} merchants.`);
     }
 
     const memoSamples = new Map<string, string[]>(
@@ -218,10 +238,10 @@ export async function ingestData(dir?: string) {
     }
 
     console.log("Inserting transactions...");
-    if (transactions.length > 0) {
+    if (allTransactions.length > 0) {
       const batchSize = 100;
-      for (let i = 0; i < transactions.length; i += batchSize) {
-        const batch = transactions.slice(i, i + batchSize);
+      for (let i = 0; i < allTransactions.length; i += batchSize) {
+        const batch = allTransactions.slice(i, i + batchSize);
         const values: any[] = [];
         const placeholders: string[] = [];
         batch.forEach((tx, idx) => {
@@ -239,7 +259,23 @@ export async function ingestData(dir?: string) {
     }
 
     console.log("Inserting funds and NAVs...");
-    for (const fund of funds) {
+    const uniqueFundsMap = new Map<string, any>();
+    for (const fund of allFunds) {
+      if (!uniqueFundsMap.has(fund.id)) {
+        uniqueFundsMap.set(fund.id, fund);
+      } else {
+        const existing = uniqueFundsMap.get(fund.id);
+        if (Array.isArray(fund.nav) && Array.isArray(existing.nav)) {
+          const navMap = new Map(existing.nav.map((n: any) => [n.date, n.value]));
+          for (const n of fund.nav) {
+            navMap.set(n.date, n.value);
+          }
+          existing.nav = Array.from(navMap.entries()).map(([date, value]) => ({ date, value }));
+        }
+      }
+    }
+
+    for (const fund of uniqueFundsMap.values()) {
       await client.query(
         `INSERT INTO funds (id, name, category)
          VALUES ($1, $2, $3)
@@ -272,28 +308,37 @@ export async function ingestData(dir?: string) {
     }
 
     console.log("Inserting holdings...");
-    if (holdings.length > 0) {
+    const uniqueHoldingsMap = new Map<string, any>();
+    for (const h of allHoldings) {
+      const key = `${h.fund_id}_${h.purchase_date}_${h.units}_${h.dataset}`;
+      if (!uniqueHoldingsMap.has(key)) {
+        uniqueHoldingsMap.set(key, h);
+      }
+    }
+    const finalHoldings = Array.from(uniqueHoldingsMap.values());
+
+    if (finalHoldings.length > 0) {
       const batchSize = 100;
-      for (let i = 0; i < holdings.length; i += batchSize) {
-        const batch = holdings.slice(i, i + batchSize);
+      for (let i = 0; i < finalHoldings.length; i += batchSize) {
+        const batch = finalHoldings.slice(i, i + batchSize);
         const values: any[] = [];
         const placeholders: string[] = [];
         batch.forEach((holding, idx) => {
-          const base = idx * 5;
-          placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`);
-          values.push(holding.fund_id, holding.fund_name, holding.units, holding.purchase_date, holding.purchase_nav);
+          const base = idx * 6;
+          placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`);
+          values.push(holding.fund_id, holding.fund_name, holding.units, holding.purchase_date, holding.purchase_nav, holding.dataset);
         });
         await client.query(
-          `INSERT INTO holdings (fund_id, fund_name, units, purchase_date, purchase_nav)
+          `INSERT INTO holdings (fund_id, fund_name, units, purchase_date, purchase_nav, dataset)
            VALUES ${placeholders.join(", ")}`,
           values
         );
       }
     }
 
-    console.log("✅ Ingestion successfully completed!");
+    console.log("✅ Combined ingestion successfully completed!");
   } catch (error) {
-    console.error("❌ Ingestion failed:", error);
+    console.error("❌ Combined ingestion failed:", error);
     throw error;
   } finally {
     client.release();

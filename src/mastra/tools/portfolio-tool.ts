@@ -32,7 +32,8 @@ export const portfolioTool = createTool({
           (h.units * h.purchase_nav)::numeric as investment_amount,
           COALESCE(ln.nav, h.purchase_nav)::numeric as current_nav,
           ln.nav_date as current_nav_date,
-          (h.units * COALESCE(ln.nav, h.purchase_nav))::numeric as current_value
+          (h.units * COALESCE(ln.nav, h.purchase_nav))::numeric as current_value,
+          h.dataset
         FROM holdings h
         LEFT JOIN latest_nav ln ON h.fund_id = ln.fund_id
         LEFT JOIN funds f ON h.fund_id = f.id
@@ -60,6 +61,7 @@ export const portfolioTool = createTool({
           current_value: parseFloat(current_value.toFixed(2)),
           gains: parseFloat(gains.toFixed(2)),
           return_pct: parseFloat(return_pct.toFixed(4)),
+          dataset: row.dataset,
         };
       });
 
